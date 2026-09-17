@@ -59,7 +59,7 @@ html{
 }
 
 @utility special-font {
-  font-family: "Zentry";
+  font-family: "Zentry", sans-serif;
   font-feature-settings: "ss01" on;
 }
 @utility border-hsla {
@@ -93,7 +93,7 @@ html{
   }
 
   .special-font b {
-    font-family: "Zentry";
+    font-family: "Zentry", sans-serif;
     font-feature-settings: "ss01" on;
   }
 

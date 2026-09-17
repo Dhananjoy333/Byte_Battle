@@ -76,7 +76,7 @@ function Navbar() {
         <nav className="flex size-full items-center justify-between p-4">
           <div className="flex items-center gap-7">
             <h1 className="text-blue-50 text-xl md:text-2xl font-bold special-font tracking-wider cursor-pointer transition-all duration-300 hover:text-cyan-300 hover:drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">
-              <a href="#hero">HORIZON</a>
+              <a href="#hero">BYTE BATTLE</a>
             </h1>
             <Button
               id="product-button"
