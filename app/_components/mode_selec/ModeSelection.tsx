@@ -9,32 +9,32 @@ import FlyingCard from "@/app/_components/mode_selec/FlyingCard"
 export default function ModeSelection() {
     const containerRef = useRef<HTMLDivElement | null>(null)
 
-    // useGSAP(
-    //     () => {
-    //         const cardDockTime = 4.2
-    //         const tl = gsap.timeline({
-    //             delay: cardDockTime,
-    //             defaults: { ease: "power2.out", duration: 0.6 },
-    //         })
-    //
-    //         // 1. Fade in the badges/boxes
-    //         tl.to(".ui-badge", {
-    //             opacity: 1,
-    //             duration: 0.3,
-    //         })
-    //             // 2. Slide the masked text upward from bottom
-    //             .from(
-    //                 ".slide-text",
-    //                 {
-    //                     yPercent: 120,
-    //                     opacity: 0,
-    //                     stagger: 0.08,
-    //                 },
-    //                 "-=0.1"
-    //             )
-    //     },
-    //     { scope: containerRef }
-    // )
+    useGSAP(
+        () => {
+            const cardDockTime = 4.2
+            const tl = gsap.timeline({
+                delay: cardDockTime,
+                defaults: { ease: "power2.out", duration: 0.6 },
+            })
+
+            // 1. Fade in the badges/boxes
+            tl.to(".ui-badge", {
+                opacity: 1,
+                duration: 0.3,
+            })
+                // 2. Slide the masked text upward from bottom
+                .from(
+                    ".slide-text",
+                    {
+                        yPercent: 120,
+                        opacity: 0,
+                        stagger: 0.08,
+                    },
+                    "-=0.1"
+                )
+        },
+        { scope: containerRef }
+    )
 
     return (
         <main
@@ -55,7 +55,7 @@ export default function ModeSelection() {
             </div>
 
             {/* "Select Mode :" */}
-            <div className="ui-badge absolute left-1/2 -translate-x-230 top-1/2 -translate-y-30 z-20 overflow-hidden opacity-100">
+            <div className="ui-badge absolute left-1/2 -translate-x-280 top-1/2 -translate-y-30 z-20 overflow-hidden opacity-0">
                 <Image
                     src="/icons/select_mode.png"
                     alt="Select Mode"
@@ -68,20 +68,27 @@ export default function ModeSelection() {
 
             {/* Cards Center Area */}
             <div className="relative z-10 flex items-center justify-center">
+                {/* Card 1: PVE */}
                 <FlyingCard
                     getPath={({ vw, vh }) => [
                         { x: vw * 0.05, y: vh * 0.55 },
                         { x: vw * 0.42, y: vh * 0.05 },
                         { x: -vw * 0.15, y: -vh * 0.35 },
                         { x: -vw * 0.27, y: -vh * 0.11 },
-                        { x: -150, y: -20 },
+                        { x: -220, y: -20 },
                     ]}
                 >
-                    <div className="flex h-full w-full items-center justify-center text-4xl font-black tracking-wider text-white">
-                        PVE
-                    </div>
+                    <Image
+                        src="/icons/pve.png"
+                        alt="PVE Mode"
+                        width={640}
+                        height={640}
+                        priority
+                        className="h-auto w-full object-contain pointer-events-none drop-shadow-xl"
+                    />
                 </FlyingCard>
 
+                {/* Card 2: PVP */}
                 <FlyingCard
                     delay={0.2}
                     getPath={({ vw, vh }) => [
@@ -89,31 +96,49 @@ export default function ModeSelection() {
                         { x: -vw * 0.42, y: vh * 0.05 },
                         { x: vw * 0.15, y: -vh * 0.35 },
                         { x: vw * 0.27, y: -vh * 0.11 },
-                        { x: 150, y: -20 },
+                        { x: 220, y: -20 },
                     ]}
                 >
-                    <div className="flex h-full w-full items-center justify-center text-4xl font-black tracking-wider text-white">
-                        PVP
-                    </div>
+                    <Image
+                        src="/icons/pvp.png"
+                        alt="PVP Mode"
+                        width={640}
+                        height={640}
+                        priority
+                        className="h-auto w-full object-contain pointer-events-none drop-shadow-xl"
+                    />
                 </FlyingCard>
             </div>
 
             {/* Difficulty Selection */}
-            <div className="absolute bottom-16 z-20 flex items-center gap-4">
-                <div className="ui-badge overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/80 px-5 py-2 backdrop-blur-md opacity-0">
-                    <span className="slide-text inline-block text-lg font-semibold text-zinc-100">
-                        Select Difficulty :
-                    </span>
+            <div className="absolute bottom-16 z-20 flex -translate-y-20 items-center gap-4">
+                <div className="ui-badge -translate-x-90 opacity-0">
+                    <Image
+                        src="/icons/select_diff.png"
+                        alt="Select Difficulty"
+                        width={550}
+                        height={300}
+                        priority
+                        className="slide-text block h-auto w-auto object-contain select-none"
+                    />
                 </div>
 
-                {["Easy", "Medium", "Hard"].map((difficulty) => (
+                {[
+                    { id: "easy", label: "Easy", src: "/icons/easy.png" },
+                    { id: "medium", label: "Medium", src: "/icons/medium.png" },
+                    { id: "hard", label: "Hard", src: "/icons/hard.png" },
+                ].map((item) => (
                     <button
-                        key={difficulty}
-                        className="ui-badge overflow-hidden rounded-md border border-zinc-700 bg-zinc-800/80 px-6 py-2 transition-colors hover:border-yellow-400 hover:bg-yellow-400/20 active:scale-95 opacity-0"
+                        key={item.id}
+                        className="ui-badge overflow-hidden -translate-x-80 rounded-md border border-zinc-700 bg-zinc-800/80 px-4 py-2 transition-all hover:border-yellow-400 hover:bg-yellow-400/20 active:scale-95 opacity-0"
                     >
-                        <span className="slide-text inline-block text-lg font-semibold text-zinc-100">
-                            {difficulty}
-                        </span>
+                        <Image
+                            src={item.src}
+                            alt={item.label}
+                            width={160}
+                            height={102}
+                            className="slide-text block h-auto w-auto object-contain select-none"
+                        />
                     </button>
                 ))}
             </div>
