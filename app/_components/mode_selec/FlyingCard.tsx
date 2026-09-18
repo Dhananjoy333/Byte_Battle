@@ -62,7 +62,7 @@ export default function FlyingCard({
                     motionPath: {
                         path,
                         curviness: 1.1,
-                        autoRotate: true,
+                        autoRotate: false, // ✅ Prevent path-based flipping
                     },
                 },
                 0
@@ -90,7 +90,7 @@ export default function FlyingCard({
     return (
         <div
             ref={cardRef}
-            className="pointer-events-auto absolute size-64 rounded-2xl border border-yellow-300/30 bg-gradient-to-br from-zinc-900 to-zinc-950 p-6 text-white shadow-2xl shadow-yellow-500/10 backdrop-blur-md"
+            className="pointer-events-auto absolute flex size-90 items-center justify-center select-none"
         >
             {children}
         </div>
