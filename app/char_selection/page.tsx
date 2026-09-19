@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { CharacterRail, CharacterSummary } from '@/app/_components/char_selec/CharacterRail';
 import { CharacterStage } from '@/app/_components/char_selec/CharacterStage';
 import { CharacterInfo, CharacterStats } from '@/app/_components/char_selec/CharacterInfo';
@@ -14,41 +15,41 @@ interface FullCharacter extends CharacterSummary {
 
 const CHARACTERS: FullCharacter[] = [
     {
-        id: 'liora',
-        name: 'Liora',
+        id: 'aurelia',
+        name: 'Aurelia Veyne',
         role: 'Sprinter',
-        avatarUrl: '/char_portrait/black_girl.png',
-        fullImage: '/char_portrait/black_girl.png',
+        avatarUrl: '/icons/aurelia.png',
+        fullImage: '/char_portrait/aurelia.png',
         description:
             'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
         stats: { power: 9, accel: 11, speed: 8 },
     },
     {
-        id: 'aria',
-        name: 'Aria',
+        id: 'raze',
+        name: 'Raze',
         role: 'Tactician',
-        avatarUrl: '/char_portrait/black_girl.png',
-        fullImage: '/char_portrait/black_girl.png',
+        avatarUrl: '/icons/raze.png',
+        fullImage: '/char_portrait/raze.png',
         description:
             'Calculates passing lanes with surgical precision and orchestrates high-tempo midfield transitions.',
         stats: { power: 7, accel: 8, speed: 10 },
     },
     {
-        id: 'maya',
-        name: 'Maya',
+        id: 'kira',
+        name: 'Kira Byte',
         role: 'Striker',
-        avatarUrl: '/char_portrait/black_girl.png',
-        fullImage: '/char_portrait/black_girl.png',
+        avatarUrl: '/icons/kira.png',
+        fullImage: '/char_portrait/kira.png',
         description:
             'Unstoppable kinetic force capable of powering through deep defensive blocks with high-impact finishing.',
         stats: { power: 12, accel: 7, speed: 6 },
     },
     {
-        id: 'lio',
-        name: 'Liora',
+        id: 'lucien',
+        name: 'Lucien Frostvale',
         role: 'Sprinter',
-        avatarUrl: '/char_portrait/black_girl.png',
-        fullImage: '/char_portrait/black_girl.png',
+        avatarUrl: '/icons/lucien.png',
+        fullImage: '/char_portrait/lucien.png',
         description:
             'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
         stats: { power: 9, accel: 11, speed: 8 },
@@ -57,8 +58,8 @@ const CHARACTERS: FullCharacter[] = [
         id: 'lior',
         name: 'Liora',
         role: 'Sprinter',
-        avatarUrl: '/char_portrait/black_girl.png',
-        fullImage: '/char_portrait/black_girl.png',
+        avatarUrl: '/icons/aurelia.png',
+        fullImage: '/char_portrait/aurelia.png',
         description:
             'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
         stats: { power: 9, accel: 11, speed: 8 },
@@ -75,24 +76,27 @@ export default function CharacterSelectPage(): React.JSX.Element {
         console.log(`Starting match with ${activeCharacter.name}`);
     };
 
-    const handleAdd = (): void => {
-        console.log(`Added ${activeCharacter.name} to team`);
-    };
-
     return (
-        <main className="relative h-screen w-screen overflow-hidden bg-[#131d31] flex items-center justify-center">
-            {/* Background 3D Dunes & Lighting atmosphere */}
+        <main
+            className="relative h-screen w-screen overflow-hidden bg-[#131d31] flex items-center justify-center"
+            suppressHydrationWarning
+        >
+            {/* Custom Background Artwork */}
             <div className="pointer-events-none absolute inset-0 z-0">
-                {/* Top glow */}
-                <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-sky-500/15 blur-[160px] rounded-full" />
-                {/* Bottom dunes gradient */}
-                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#1b3459]/50 via-[#182a46]/20 to-transparent" />
+                <Image
+                    src="/img/char_selec_bg.png"
+                    alt="Character Selection Background"
+                    fill
+                    priority
+                    className="object-cover object-center"
+                />
             </div>
 
-            {/* Stage: Character + Podium + Ball (Centers across entire screen) */}
-            <div className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none pb-12">
-                <div className="pointer-events-auto w-full max-w-2xl h-[85vh] flex flex-col items-center justify-end">
+            {/* Stage: Character + Podium (Centered vertically across screen) */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none pt-2">
+                <div className="pointer-events-auto w-full max-w-2xl flex flex-col items-center justify-center">
                     <CharacterStage
+                        characterId={activeCharacter.id}
                         characterImage={activeCharacter.fullImage}
                         characterName={activeCharacter.name}
                         ballImage="/assets/soccer-ball.png"
@@ -117,7 +121,6 @@ export default function CharacterSelectPage(): React.JSX.Element {
                     name={activeCharacter.name}
                     description={activeCharacter.description}
                     stats={activeCharacter.stats}
-                    onAddClick={handleAdd}
                 />
             </div>
         </main>

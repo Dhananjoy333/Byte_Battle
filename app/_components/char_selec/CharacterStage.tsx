@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
+import { Podium } from './Podium';
 
 interface CharacterStageProps {
+    characterId: string;
     characterImage: string;
     characterName: string;
     ballImage?: string;
@@ -9,50 +11,50 @@ interface CharacterStageProps {
 }
 
 export const CharacterStage: React.FC<CharacterStageProps> = ({
+                                                                  characterId,
                                                                   characterImage,
                                                                   characterName,
-                                                                  ballImage = '/assets/soccer-ball.png',
                                                                   onPlay,
                                                               }) => {
     return (
-        <div className="relative flex flex-col items-center justify-end w-full h-[88vh] max-h-[920px] select-none">
+        <div className="relative flex flex-col items-center justify-center w-full select-none">
+
             {/* Background Stage Glow */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sky-400/25 rounded-full blur-[140px] pointer-events-none" />
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-130 h-130 bg-sky-400/20 rounded-full blur-[140px] pointer-events-none" />
 
-            {/* Main Character PNG Cutout */}
-            <div className="relative z-10 w-[640px] h-[78vh] max-h-[800px] pointer-events-none transition-transform duration-500 ease-out hover:scale-[1.02]">
-                <Image
-                    src={characterImage}
-                    alt={characterName}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 640px"
-                    className="object-contain object-bottom drop-shadow-[0_30px_45px_rgba(0,0,0,0.65)]"
-                />
+            {/* Character PNG Cutout */}
+            <div className="relative z-10 w-120 md:w-130 translate-y-7.5 h-[48vh] max-h-125 pointer-events-none flex items-end justify-center">
+                <div key={characterId} className="relative w-full h-full animate-in fade-in duration-300">
+                    <Image
+                        src={characterImage}
+                        alt={characterName}
+                        fill
+                        priority
+                        sizes="(max-width: 1024px) 100vw, 640px"
+                        className="object-contain object-bottom drop-shadow-[0_25px_35px_rgba(0,0,0,0.7)]"
+                    />
+                </div>
             </div>
 
-            {/* Layered 3D-Look Stage Podium */}
-            <div className="relative -mt-24 z-0 flex flex-col items-center">
-                {/* Top surface disc */}
-                <div className="w-[520px] h-[100px] rounded-[100%] bg-gradient-to-b from-white via-slate-100 to-slate-300 shadow-[0_15px_35px_rgba(0,0,0,0.45)] border-t border-white/80" />
+            {/* 3D Rotating Mesh Podium Stage */}
+            <div className="relative z-0 -mt-6 md:-mt-10 flex flex-col items-center">
+                <Podium characterId={characterId} />
 
-                {/* Cylinder depth bevel */}
-                <div className="w-[516px] h-16 -mt-12 rounded-b-[100%] bg-gradient-to-b from-slate-400 to-slate-700 shadow-2xl" />
-
-                {/* Floor contact shadow */}
-                <div className="absolute -bottom-6 w-[620px] h-20 bg-black/50 blur-2xl rounded-[100%] pointer-events-none" />
+                {/* Grounding contact shadow right under character base on podium deck */}
+                <div className="absolute top-8 w-56 h-5 bg-black/50 blur-md rounded-full pointer-events-none -z-5" />
             </div>
 
-            {/* "Let's Play!" Primary CTA Button */}
-            <div className="relative z-30 -mt-8">
+            {/* Primary CTA Button with generous breathing room */}
+            <div className="relative z-30 mt-6 md:mt-8">
                 <button
                     type="button"
                     onClick={onPlay}
-                    className="px-14 py-4 rounded-2xl bg-gradient-to-r from-[#ff4767] to-[#ff3358] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-extrabold text-base tracking-wider shadow-[0_12px_30px_rgba(255,71,103,0.55)] transition-all duration-200"
+                    className="px-14 py-4 rounded-2xl bg-linear-to-r from-[#ff4767] to-[#ff3358] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-extrabold text-base tracking-wider shadow-[0_12px_30px_rgba(255,71,103,0.55)] transition-all duration-200 cursor-pointer"
                 >
                     Let&apos;s Play!
                 </button>
             </div>
+
         </div>
     );
 };

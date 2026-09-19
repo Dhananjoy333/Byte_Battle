@@ -12,7 +12,6 @@ interface CharacterInfoProps {
     name: string;
     description: string;
     stats: CharacterStats;
-    onAddClick?: () => void;
 }
 
 export const CharacterInfo: React.FC<CharacterInfoProps> = ({
@@ -20,7 +19,6 @@ export const CharacterInfo: React.FC<CharacterInfoProps> = ({
                                                                 name,
                                                                 description,
                                                                 stats,
-                                                                onAddClick,
                                                             }) => {
     return (
         <div className="relative flex flex-col items-start max-w-xl select-none">
@@ -34,14 +32,6 @@ export const CharacterInfo: React.FC<CharacterInfoProps> = ({
                 <h1 className="text-7xl md:text-8xl font-black tracking-tight text-white drop-shadow-lg">
                     {name}
                 </h1>
-                <button
-                    type="button"
-                    onClick={onAddClick}
-                    aria-label={`Add ${name}`}
-                    className="w-12 h-12 rounded-2xl bg-[#ff4767] hover:bg-[#ff3358] flex items-center justify-center text-white text-3xl font-bold transition-all shadow-[0_4px_20px_rgba(255,71,103,0.5)] active:scale-95"
-                >
-                    +
-                </button>
             </div>
 
             {/* Bio / Playstyle Description */}
