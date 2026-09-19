@@ -65,13 +65,17 @@ export const CharacterRail: React.FC<CharacterRailProps> = ({
         */}
                     <path
                         d="
-                M 230 20
-                L 70 65
-                C 50 67, 45 74, 45 90
-                C 45 106, 50 113, 70 115
-                L 230 160
-                Z
-            "
+        M 230 20
+        L 70 65
+
+        C 58 68, 50 72, 53 79
+        C 55 84, 50 87, 45 90
+        C 50 93, 55 96, 53 101
+        C 50 108, 58 112, 70 115
+
+        L 230 160
+        Z
+    "
                         fill="url(#beamGradient)"
                     />
 
