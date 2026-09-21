@@ -69,12 +69,12 @@ const INITIAL_QUESTIONS: TriviaQuestion[] = [
 ];
 
 export const GameHUD: React.FC = () => {
-    // Fighters State
+    // Fighters State (Aurelia vs Kira)
     const [player, setPlayer] = useState<FighterState>({
-        id: 'kai',
-        name: 'KAI',
-        title: 'THE DRAGON FIST',
-        portraitUrl: '/char_portrait/kai.jpg',
+        id: 'aurelia',
+        name: 'AURELIA',
+        title: 'SPRINTER // LIGHTNING PLAYMAKER',
+        portraitUrl: '/icons/aurelia.png',
         currentHp: 100,
         maxHp: 100,
         roundsWon: 1,
@@ -83,16 +83,38 @@ export const GameHUD: React.FC = () => {
     });
 
     const [opponent, setOpponent] = useState<FighterState>({
-        id: 'ryuuga',
-        name: 'RYUUGA',
-        title: 'SHADOW BLADE',
-        portraitUrl: '/char_portrait/ryuuga.jpg',
+        id: 'kira',
+        name: 'KIRA',
+        title: 'STRIKER // KINETIC POWERHOUSE',
+        portraitUrl: '/icons/kira.png',
         currentHp: 100,
         maxHp: 100,
         roundsWon: 0,
         maxRounds: 2,
         isHurt: false,
     });
+
+    // Sprite Animation State (8-frame attack cycle for Aurelia)
+    const [playerFrame, setPlayerFrame] = useState<number>(1);
+    const [isPlayerAttacking, setIsPlayerAttacking] = useState<boolean>(false);
+    const attackAnimTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Preload sprite frames so animation plays smoothly without flicker
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            for (let i = 1; i <= 8; i++) {
+                const imgA = new window.Image();
+                imgA.src = `/sprites/aurelia sprite/s-${i}.png`;
+                const imgK = new window.Image();
+                imgK.src = `/sprites/kira sprite/s-${i}.png`;
+            }
+        }
+        return () => {
+            if (attackAnimTimerRef.current) {
+                clearInterval(attackAnimTimerRef.current);
+            }
+        };
+    }, []);
 
     // Match Timer State
     const [timeLeft, setTimeLeft] = useState<number>(99);
@@ -174,20 +196,45 @@ export const GameHUD: React.FC = () => {
         []
     );
 
-    // Initial Match Announcement Sequence
-    useEffect(() => {
-        soundFx.playAnnouncerStinger();
-        const fightTimer = setTimeout(() => {
-            setBannerMessage('FIGHT');
-            soundFx.playAnnouncerStinger();
-        }, 1200);
+    // Match Active State (Controls & timers start only after Round 1 -> Fight finishes)
+    const [isMatchStarted, setIsMatchStarted] = useState<boolean>(false);
+    const introTimersRef = useRef<NodeJS.Timeout[]>([]);
 
-        return () => clearTimeout(fightTimer);
+    const clearIntroTimers = useCallback(() => {
+        introTimersRef.current.forEach((t) => clearTimeout(t));
+        introTimersRef.current = [];
     }, []);
 
-    // Match Timer Countdown (every 1 second)
+    // Initial Match Announcement Sequence: ROUND 1 -> FIGHT -> Match Begins (Zero flicker)
+    const startMatchSequence = useCallback(() => {
+        clearIntroTimers();
+        setIsMatchStarted(false);
+        setBannerMessage('ROUND_1');
+        soundFx.playAnnouncerStinger();
+
+        const t1 = setTimeout(() => {
+            setBannerMessage('FIGHT');
+            soundFx.playAnnouncerStinger();
+        }, 1300);
+
+        const t2 = setTimeout(() => {
+            setBannerMessage(null);
+            setIsMatchStarted(true);
+        }, 2500);
+
+        introTimersRef.current = [t1, t2];
+    }, [clearIntroTimers]);
+
     useEffect(() => {
-        if (timeLeft <= 0 || isTimeOver) return;
+        startMatchSequence();
+        return () => {
+            clearIntroTimers();
+        };
+    }, [startMatchSequence, clearIntroTimers]);
+
+    // Match Timer Countdown (every 1 second, only when match is active)
+    useEffect(() => {
+        if (!isMatchStarted || timeLeft <= 0 || isTimeOver) return;
 
         const interval = setInterval(() => {
             setTimeLeft((prev) => {
@@ -205,7 +252,7 @@ export const GameHUD: React.FC = () => {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [timeLeft, isTimeOver]);
+    }, [isMatchStarted, timeLeft, isTimeOver]);
 
     // Action Cooldown Clock (100ms interval tick)
     useEffect(() => {
@@ -241,9 +288,9 @@ export const GameHUD: React.FC = () => {
         );
     }, [superMeter.value]);
 
-    // Question Turn Timer tick
+    // Question Turn Timer tick (only when match is active)
     useEffect(() => {
-        if (isAnswered) return;
+        if (!isMatchStarted || isAnswered) return;
 
         const interval = setInterval(() => {
             setQuestionTimer((prev) => {
@@ -257,16 +304,42 @@ export const GameHUD: React.FC = () => {
         }, 100);
 
         return () => clearInterval(interval);
-    }, [isAnswered]);
+    }, [isMatchStarted, isAnswered]);
 
-    // Execute Attacks
+    // Execute Attacks (Sprite animation on Q, W, E and opponent damage)
     const triggerAttack = useCallback(
         (type: ActionType) => {
+            if (!isMatchStarted) return;
             const targetAbility = abilities.find((a) => a.type === type);
             if (!targetAbility || targetAbility.currentCooldown > 0) return;
             if (type === 'ult' && superMeter.value < 100) return;
 
             soundFx.playHit(type);
+
+            // Animate Aurelia's 8 attack sprite frames (s-1.png -> s-8.png)
+            if (attackAnimTimerRef.current) {
+                clearInterval(attackAnimTimerRef.current);
+                attackAnimTimerRef.current = null;
+            }
+            setIsPlayerAttacking(true);
+            setPlayerFrame(1);
+
+            let currentFrame = 1;
+            const frameSpeed = type === 'light' ? 50 : type === 'heavy' ? 65 : 75;
+
+            attackAnimTimerRef.current = setInterval(() => {
+                currentFrame++;
+                if (currentFrame <= 8) {
+                    setPlayerFrame(currentFrame);
+                } else {
+                    if (attackAnimTimerRef.current) {
+                        clearInterval(attackAnimTimerRef.current);
+                        attackAnimTimerRef.current = null;
+                    }
+                    setPlayerFrame(1);
+                    setIsPlayerAttacking(false);
+                }
+            }, frameSpeed);
 
             // Screen effects
             if (type === 'ult') {
@@ -299,7 +372,7 @@ export const GameHUD: React.FC = () => {
                 });
             }
 
-            // Damage Opponent
+            // Damage Opponent (Enemy ONLY takes damage on attacks)
             setOpponent((prev) => {
                 const nextHp = Math.max(0, prev.currentHp - targetAbility.damage);
                 if (nextHp === 0) {
@@ -316,7 +389,7 @@ export const GameHUD: React.FC = () => {
             // Combo & Floating Text
             setComboCount((prev) => prev + 1);
             addFloatingText(
-                `-${targetAbility.damage} ${type === 'ult' ? '★ DRAGON STRIKE!' : type === 'heavy' ? 'CRITICAL!' : ''}`,
+                `-${targetAbility.damage} ${type === 'ult' ? '★ CRYSTAL BURST!' : type === 'heavy' ? 'CRITICAL!' : 'LIGHT HIT!'}`,
                 type === 'ult' || type === 'heavy' ? 'critical' : 'damage',
                 'right'
             );
@@ -324,14 +397,14 @@ export const GameHUD: React.FC = () => {
             // Reset Hurt flash on opponent
             setTimeout(() => {
                 setOpponent((prev) => ({ ...prev, isHurt: false }));
-            }, 300);
+            }, 350);
         },
-        [abilities, superMeter.value, addFloatingText]
+        [isMatchStarted, abilities, superMeter.value, addFloatingText]
     );
 
     // Handle Question Answer Selection
     const handleAnswerSelect = (selectedKey: 'A' | 'B' | 'C' | 'D' | null) => {
-        if (isAnswered) return;
+        if (!isMatchStarted || isAnswered) return;
         setIsAnswered(true);
         setSelectedAnswer(selectedKey);
 
@@ -351,19 +424,11 @@ export const GameHUD: React.FC = () => {
                 return { ...prev, value: nextVal, isFull: nextVal >= 100 };
             });
 
-            // Damage opponent as trivia counter-hit
-            setOpponent((prev) => {
-                const nextHp = Math.max(0, prev.currentHp - 15);
-                return { ...prev, currentHp: nextHp, isHurt: true };
-            });
-
+            // Note: Enemy does NOT take damage on correct answer anymore!
+            // Damage is only dealt when the player attacks with Q, W, or E.
             addFloatingText(`+${superGain} SUPER CHARGE!`, 'bonus', 'left');
-            addFloatingText('-15 COUNTER HIT!', 'hit', 'right');
+            addFloatingText('CORRECT ANSWER!', 'streak', 'left');
             setComboCount((prev) => prev + 1);
-
-            setTimeout(() => {
-                setOpponent((prev) => ({ ...prev, isHurt: false }));
-            }, 300);
         } else {
             soundFx.playWrong();
             // Player takes minor retaliation hit
@@ -392,8 +457,8 @@ export const GameHUD: React.FC = () => {
     // Keyboard Shortcuts (Q, W, E for attacks; A, B, C, D or 1, 2, 3, 4 for trivia)
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Ignore if typing in input
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            // Ignore if typing in input or if match hasn't started yet
+            if (!isMatchStarted || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;
             }
 
@@ -412,19 +477,31 @@ export const GameHUD: React.FC = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [triggerAttack, isAnswered]);
+    }, [isMatchStarted, triggerAttack, isAnswered]);
 
     // Reset Match
     const resetMatch = () => {
+        if (attackAnimTimerRef.current) {
+            clearInterval(attackAnimTimerRef.current);
+            attackAnimTimerRef.current = null;
+        }
+        setPlayerFrame(1);
+        setIsPlayerAttacking(false);
         setPlayer((prev) => ({ ...prev, currentHp: 100, isHurt: false }));
         setOpponent((prev) => ({ ...prev, currentHp: 100, isHurt: false }));
         setTimeLeft(99);
         setIsTimeOver(false);
         setSuperMeter({ value: 35, max: 100, isFull: false });
         setComboCount(0);
-        setBannerMessage('ROUND_1');
-        setTimeout(() => setBannerMessage('FIGHT'), 1200);
+        setQuestionTimer(100);
+        setIsAnswered(false);
+        setSelectedAnswer(null);
+        startMatchSequence();
     };
+
+    const handleBannerComplete = useCallback(() => {
+        setBannerMessage(null);
+    }, []);
 
     const timerMultiplier = questionTimer > 50 ? 2.0 : questionTimer > 20 ? 1.5 : 1.0;
 
@@ -447,33 +524,41 @@ export const GameHUD: React.FC = () => {
                 {/* Animated Ambient Embers & Lighting Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
 
-                {/* Left Fighter Sprite: Kai (martial arts stance) */}
+                {/* Left Fighter Sprite: Aurelia (Animated 8-frame attack cycle) */}
                 <div
-                    className={`absolute bottom-[22%] sm:bottom-[24%] left-[12%] sm:left-[16%] md:left-[22%] w-48 sm:w-64 md:w-80 h-48 sm:h-64 md:h-80 transition-transform duration-100 ${
-                        player.isHurt ? 'translate-x-[-12px] brightness-150' : 'animate-idle'
+                    className={`absolute bottom-[18%] sm:bottom-[20%] md:bottom-[22%] left-[8%] sm:left-[12%] md:left-[16%] w-56 h-56 sm:w-72 sm:h-72 md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px] transition-transform duration-100 ${
+                        player.isHurt
+                            ? 'translate-x-[-12px] brightness-150'
+                            : isPlayerAttacking
+                            ? 'scale-105 filter drop-shadow-[0_0_30px_rgba(56,189,248,0.7)]'
+                            : 'animate-idle'
                     }`}
                 >
                     <Image
-                        src="/img/kai_sprite.jpg"
-                        alt="Kai Fighter"
+                        src={`/sprites/aurelia sprite/s-${playerFrame}.png`}
+                        alt="Aurelia Fighter"
                         fill
+                        unoptimized
                         priority
-                        className="object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
+                        className="object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
                     />
                 </div>
 
-                {/* Right Fighter Sprite: Ryuuga (ninja sword stance) */}
+                {/* Right Fighter Sprite: Kira (mirrored to face left) */}
                 <div
-                    className={`absolute bottom-[22%] sm:bottom-[24%] right-[12%] sm:right-[16%] md:right-[22%] w-48 sm:w-64 md:w-80 h-48 sm:h-64 md:h-80 transition-transform duration-100 ${
-                        opponent.isHurt ? 'translate-x-[12px] brightness-150' : 'animate-idle-delayed'
+                    className={`absolute bottom-[18%] sm:bottom-[20%] md:bottom-[22%] right-[8%] sm:right-[12%] md:right-[16%] w-56 h-56 sm:w-72 sm:h-72 md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px] transition-transform duration-100 ${
+                        opponent.isHurt
+                            ? 'translate-x-[12px] brightness-150 contrast-125'
+                            : 'animate-idle-delayed'
                     }`}
                 >
                     <Image
-                        src="/img/ryuuga_sprite.jpg"
-                        alt="Ryuuga Fighter"
+                        src="/sprites/kira sprite/s-1.png"
+                        alt="Kira Fighter"
                         fill
+                        unoptimized
                         priority
-                        className="object-contain filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)]"
+                        className="object-contain scale-x-[-1] filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
                     />
                 </div>
             </div>
@@ -494,7 +579,7 @@ export const GameHUD: React.FC = () => {
             {/* 3. COMBAT FEEDBACK (Midground / Ephemeral) */}
             <CombatFeedback
                 bannerMessage={bannerMessage}
-                onBannerComplete={() => setBannerMessage(null)}
+                onBannerComplete={handleBannerComplete}
                 comboCount={comboCount}
                 floatingTexts={floatingTexts}
             />
@@ -505,7 +590,7 @@ export const GameHUD: React.FC = () => {
                 timerProgress={questionTimer}
                 timerMultiplier={timerMultiplier}
                 selectedAnswer={selectedAnswer}
-                isAnswered={isAnswered}
+                isAnswered={isAnswered || !isMatchStarted}
                 onSelectAnswer={handleAnswerSelect}
                 abilities={abilities}
                 superMeter={superMeter}

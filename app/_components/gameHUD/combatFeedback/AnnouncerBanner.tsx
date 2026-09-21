@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BannerMessageType } from '../types';
 
 interface AnnouncerBannerProps {
@@ -9,83 +9,67 @@ interface AnnouncerBannerProps {
 }
 
 export const AnnouncerBanner: React.FC<AnnouncerBannerProps> = ({ message, onComplete }) => {
-    const [visible, setVisible] = useState(!!message);
-    const [animClass, setAnimClass] = useState('scale-100 opacity-100');
+    const onCompleteRef = useRef(onComplete);
 
     useEffect(() => {
-        if (!message) {
-            setVisible(false);
-            return;
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
+    useEffect(() => {
+        if (!message) return;
+
+        // Auto-dismiss for terminal banners like KO, TIME_OVER, VICTORY if onComplete is supplied
+        if (message === 'KO' || message === 'TIME_OVER' || message === 'VICTORY' || message === 'DOUBLE_KO') {
+            const timer = setTimeout(() => {
+                onCompleteRef.current?.();
+            }, 2500);
+            return () => clearTimeout(timer);
         }
+    }, [message]);
 
-        setVisible(true);
-        setAnimClass('scale-50 opacity-0 translate-y-4');
-
-        const entranceTimer = setTimeout(() => {
-            setAnimClass('scale-105 opacity-100 translate-y-0');
-        }, 30);
-
-        const holdTimer = setTimeout(() => {
-            setAnimClass('scale-100 opacity-100');
-        }, 300);
-
-        const exitTimer = setTimeout(() => {
-            setAnimClass('scale-125 opacity-0 -translate-y-4');
-        }, 1800);
-
-        const finishTimer = setTimeout(() => {
-            setVisible(false);
-            onComplete?.();
-        }, 2200);
-
-        return () => {
-            clearTimeout(entranceTimer);
-            clearTimeout(holdTimer);
-            clearTimeout(exitTimer);
-            clearTimeout(finishTimer);
-        };
-    }, [message, onComplete]);
-
-    if (!visible || !message) return null;
+    if (!message) return null;
 
     const renderContent = () => {
         switch (message) {
             case 'ROUND_1':
                 return (
                     <div className="flex flex-col items-center">
-                        <span className="text-2xl sm:text-4xl md:text-5xl font-black italic tracking-widest text-slate-100 uppercase drop-shadow-[0_4px_10px_rgba(0,0,0,1)] font-mono">
-                            ROUND 1
-                        </span>
+                        <div className="px-8 sm:px-12 py-3 sm:py-4 bg-black/80 backdrop-blur-md border-y-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.7)] flex items-center justify-center rounded-sm">
+                            <span className="text-3xl sm:text-5xl md:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-500 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,1)] font-mono">
+                                ROUND 1
+                            </span>
+                        </div>
                     </div>
                 );
             case 'ROUND_2':
                 return (
                     <div className="flex flex-col items-center">
-                        <span className="text-2xl sm:text-4xl md:text-5xl font-black italic tracking-widest text-slate-100 uppercase drop-shadow-[0_4px_10px_rgba(0,0,0,1)] font-mono">
-                            ROUND 2
-                        </span>
+                        <div className="px-8 sm:px-12 py-3 sm:py-4 bg-black/80 backdrop-blur-md border-y-4 border-amber-400 shadow-[0_0_35px_rgba(245,158,11,0.7)] flex items-center justify-center rounded-sm">
+                            <span className="text-3xl sm:text-5xl md:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-500 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,1)] font-mono">
+                                ROUND 2
+                            </span>
+                        </div>
                     </div>
                 );
             case 'FINAL_ROUND':
                 return (
                     <div className="flex flex-col items-center">
-                        <span className="text-2xl sm:text-4xl md:text-5xl font-black italic tracking-widest text-amber-400 uppercase drop-shadow-[0_4px_10px_rgba(0,0,0,1)] font-mono">
-                            FINAL ROUND
-                        </span>
+                        <div className="px-8 sm:px-12 py-3 sm:py-4 bg-black/80 backdrop-blur-md border-y-4 border-red-500 shadow-[0_0_35px_rgba(239,68,68,0.7)] flex items-center justify-center rounded-sm">
+                            <span className="text-3xl sm:text-5xl md:text-6xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-amber-300 to-orange-500 uppercase drop-shadow-[0_4px_12px_rgba(0,0,0,1)] font-mono">
+                                FINAL ROUND
+                            </span>
+                        </div>
                     </div>
                 );
             case 'FIGHT':
                 return (
                     <div className="flex flex-col items-center">
-                        <span className="text-base sm:text-xl md:text-2xl font-black tracking-widest text-neutral-200 uppercase font-mono mb-1">
-                            ROUND 1
-                        </span>
-                        <div className="relative">
+                        <div className="px-10 sm:px-16 py-3 sm:py-5 bg-black/85 backdrop-blur-md border-y-4 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.85)] flex items-center justify-center rounded-sm">
                             <span
-                                className="text-5xl sm:text-7xl md:text-9xl font-black italic tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-orange-500 to-red-600 drop-shadow-[0_8px_16px_rgba(0,0,0,1)]"
+                                className="text-6xl sm:text-8xl md:text-9xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-orange-500 to-red-600 drop-shadow-[0_8px_20px_rgba(0,0,0,1)] font-mono"
                                 style={{
                                     WebkitTextStroke: '2px #000000',
-                                    filter: 'drop-shadow(0 0 25px rgba(239, 68, 68, 0.9))',
+                                    filter: 'drop-shadow(0 0 30px rgba(239, 68, 68, 1))',
                                 }}
                             >
                                 FIGHT!
@@ -144,11 +128,37 @@ export const AnnouncerBanner: React.FC<AnnouncerBannerProps> = ({ message, onCom
 
     return (
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none select-none">
-            <div
-                className={`transition-all duration-300 ease-out transform ${animClass}`}
-            >
+            <div className="animate-banner-in">
                 {renderContent()}
             </div>
+            <style jsx>{`
+                @keyframes bannerIn {
+                    0% {
+                        opacity: 0;
+                        transform: scale(0.65) translateY(12px);
+                    }
+                    25% {
+                        opacity: 1;
+                        transform: scale(1.05) translateY(0);
+                    }
+                    35% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    88% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                    100% {
+                        opacity: 1;
+                        transform: scale(1);
+                    }
+                }
+                .animate-banner-in {
+                    animation: bannerIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+            `}</style>
         </div>
     );
 };
+
