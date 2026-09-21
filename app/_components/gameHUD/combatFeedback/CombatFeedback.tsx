@@ -21,7 +21,7 @@ export const CombatFeedback: React.FC<CombatFeedbackProps> = ({
     return (
         <div className="absolute inset-0 pointer-events-none z-30">
             {/* Ephemeral Announcer Banner */}
-            <AnnouncerBanner message={bannerMessage} onComplete={onBannerComplete} />
+            <AnnouncerBanner key={bannerMessage || 'none'} message={bannerMessage} onComplete={onBannerComplete} />
 
             {/* Floating Combo and Damage Numbers */}
             <ComboCounter comboCount={comboCount} floatingTexts={floatingTexts} />
