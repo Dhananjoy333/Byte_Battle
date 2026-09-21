@@ -55,11 +55,11 @@ const CHARACTERS: FullCharacter[] = [
         stats: { power: 9, accel: 11, speed: 8 },
     },
     {
-        id: 'lior',
-        name: 'Liora',
+        id: 'raizen',
+        name: 'Raizen',
         role: 'Sprinter',
-        avatarUrl: '/icons/aurelia.png',
-        fullImage: '/char_portrait/aurelia.png',
+        avatarUrl: '/icons/raizen.png',
+        fullImage: '/char_portrait/raizen.png',
         description:
             'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
         stats: { power: 9, accel: 11, speed: 8 },
