@@ -5,13 +5,15 @@ import { ActionAbility } from '../../types';
 
 interface ActionButtonProps {
     ability: ActionAbility;
+    actionPoints: number;
     onClick: () => void;
 }
 
-export const ActionButton: React.FC<ActionButtonProps> = ({ ability, onClick }) => {
-    const isLocked = !ability.isReady && ability.type === 'ult' && ability.superCost > 0;
+export const ActionButton: React.FC<ActionButtonProps> = ({ ability, actionPoints, onClick }) => {
+    const hasPoints = actionPoints >= ability.pointCost;
+    const isSuperLocked = !ability.isReady && ability.type === 'ult' && ability.superCost > 0;
     const isOnCooldown = ability.currentCooldown > 0;
-    const isAvailable = !isOnCooldown && (!isLocked || ability.isReady);
+    const isAvailable = !isOnCooldown && hasPoints && !isSuperLocked;
 
     // Cooldown percentage for radial sweep
     const cooldownPercent = isOnCooldown
@@ -139,7 +141,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({ ability, onClick }) 
                 )}
 
                 {/* Lock Overlay for Ultimate when Super is not ready */}
-                {isLocked && (
+                {isSuperLocked && !isOnCooldown && (
                     <div className="absolute inset-0 rounded-full bg-black/85 flex flex-col items-center justify-center z-20 border border-neutral-800">
                         <svg
                             viewBox="0 0 24 24"
@@ -149,7 +151,19 @@ export const ActionButton: React.FC<ActionButtonProps> = ({ ability, onClick }) 
                             <path d="M12 2a4 4 0 0 0-4 4v4H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4zm-2 4a2 2 0 1 1 4 0v4h-4V6zm2 9a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />
                         </svg>
                         <span className="text-[9px] font-mono text-neutral-500 font-bold uppercase tracking-tighter mt-0.5">
-                            LOCKED
+                            SUPER REQ
+                        </span>
+                    </div>
+                )}
+
+                {/* Point Requirement Overlay when not enough points and not on cooldown */}
+                {!hasPoints && !isOnCooldown && !isSuperLocked && (
+                    <div className="absolute inset-0 rounded-full bg-black/80 flex flex-col items-center justify-center z-20 border border-neutral-800">
+                        <span className="text-[10px] sm:text-xs font-mono font-black text-amber-400">
+                            {ability.pointCost}P
+                        </span>
+                        <span className="text-[8px] font-mono text-neutral-400 uppercase font-bold tracking-tight">
+                            NEED
                         </span>
                     </div>
                 )}
@@ -157,6 +171,17 @@ export const ActionButton: React.FC<ActionButtonProps> = ({ ability, onClick }) 
                 {/* Hotkey Tag Badge [Q], [W], [E] */}
                 <div className="absolute -top-1 -right-1 z-30 px-1.5 py-0.5 bg-black text-[9px] sm:text-[10px] font-mono font-black rounded border border-neutral-600 text-neutral-200 shadow-sm">
                     {ability.hotkey}
+                </div>
+
+                {/* Point Cost Badge on Bottom Left */}
+                <div
+                    className={`absolute -bottom-1 -left-1 z-30 px-1.5 py-0.5 bg-black text-[9px] sm:text-[10px] font-mono font-black rounded border shadow-sm ${
+                        hasPoints
+                            ? 'border-amber-400/90 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                            : 'border-neutral-700 text-neutral-500'
+                    }`}
+                >
+                    {ability.pointCost}P
                 </div>
             </button>
 

@@ -57,6 +57,7 @@ export interface ActionAbility {
     cooldownTotal: number; // in seconds
     currentCooldown: number; // remaining seconds
     superCost: number; // 0 for light/heavy, 100 for ult
+    pointCost: number; // 1 for light, 2 for heavy, 5 for ult
     isReady: boolean;
     themeColor: 'blue' | 'orange' | 'red';
 }

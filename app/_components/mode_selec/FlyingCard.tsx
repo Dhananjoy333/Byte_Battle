@@ -38,75 +38,74 @@ export default function FlyingCard({
     const cardRef = useRef<HTMLDivElement | null>(null)
     const innerRef = useRef<HTMLDivElement | null>(null)
     const [isSettled, setIsSettled] = useState(false)
-    const hasAnimatedRef = useRef(false)
 
-    // GSAP Flying & Docking Motion Path Timeline - Runs ONCE on page load
-    useGSAP(() => {
-        if (hasAnimatedRef.current) return
-        hasAnimatedRef.current = true
+    // GSAP Flying & Docking Motion Path Timeline - Runs on page mount
+    useGSAP(
+        () => {
+            const card = cardRef.current
+            if (!card) return
 
-        const card = cardRef.current
-        if (!card) return
+            const vw = window.innerWidth
+            const vh = window.innerHeight
 
-        const vw = window.innerWidth
-        const vh = window.innerHeight
+            const path = getPath({ vw, vh })
+            const start = initialPos ? initialPos({ vw, vh }) : path[0]
 
-        const path = getPath({ vw, vh })
-        const start = initialPos ? initialPos({ vw, vh }) : path[0]
+            // Starting state
+            gsap.set(card, {
+                x: start.x,
+                y: start.y,
+                scale: 0.35,
+                opacity: 0,
+            })
 
-        // Starting state
-        gsap.set(card, {
-            x: start.x,
-            y: start.y,
-            scale: 0.35,
-            opacity: 0,
-        })
+            const tl = gsap.timeline({
+                delay,
+                onComplete: () => {
+                    setIsSettled(true)
+                    onSettle?.()
+                },
+            })
 
-        const tl = gsap.timeline({
-            delay,
-            onComplete: () => {
-                setIsSettled(true)
-                onSettle?.()
-            },
-        })
-
-        tl.to(card, {
-            opacity: 1,
-            duration: 0.4,
-            ease: 'power1.out',
-        })
-            .to(
-                card,
-                {
-                    duration: 4.5,
-                    ease: 'power1.inOut',
-                    motionPath: {
-                        path,
-                        curviness: 1.1,
-                        autoRotate: false, // Prevent path-based flipping
+            tl.to(card, {
+                opacity: 1,
+                duration: 0.4,
+                ease: 'power1.out',
+            })
+                .to(
+                    card,
+                    {
+                        duration: 4.5,
+                        ease: 'power1.inOut',
+                        motionPath: {
+                            path,
+                            curviness: 1.1,
+                            autoRotate: false, // Prevent path-based flipping
+                        },
                     },
-                },
-                0
-            )
-            .to(
-                card,
-                {
-                    scale: 1,
-                    duration: 4.5,
-                    ease: 'power1.inOut',
-                },
-                0
-            )
-            .to(
-                card,
-                {
-                    rotation: 0,
-                    duration: 0.8,
-                    ease: 'back.out(1.2)',
-                },
-                '-=0.5'
-            )
-    }, [])
+                    0
+                )
+                .to(
+                    card,
+                    {
+                        scale: 1,
+                        duration: 4.5,
+                        ease: 'power1.inOut',
+                    },
+                    0
+                )
+                .to(
+                    card,
+                    {
+                        rotation: 0,
+                        duration: 0.8,
+                        ease: 'back.out(1.2)',
+                    },
+                    '-=0.5'
+                )
+        },
+        { scope: cardRef }
+    )
 
     // Parallax Tilt on Hover (Active ONLY once settled; does NOT move x or y)
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {

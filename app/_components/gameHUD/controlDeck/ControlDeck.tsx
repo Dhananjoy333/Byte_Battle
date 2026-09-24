@@ -14,6 +14,7 @@ interface ControlDeckProps {
     onSelectAnswer: (key: 'A' | 'B' | 'C' | 'D') => void;
     abilities: ActionAbility[];
     superMeter: SuperMeterState;
+    actionPoints: number;
     onTriggerAction: (type: ActionType) => void;
 }
 
@@ -26,6 +27,7 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
     onSelectAnswer,
     abilities,
     superMeter,
+    actionPoints,
     onTriggerAction,
 }) => {
     return (
@@ -47,6 +49,7 @@ export const ControlDeck: React.FC<ControlDeckProps> = ({
                 <ActionControls
                     abilities={abilities}
                     superMeter={superMeter}
+                    actionPoints={actionPoints}
                     onTriggerAction={onTriggerAction}
                 />
             </div>

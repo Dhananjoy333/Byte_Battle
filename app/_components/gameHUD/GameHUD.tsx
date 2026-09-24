@@ -2,10 +2,17 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { TopBar } from './topBar/TopBar';
 import { CombatFeedback } from './combatFeedback/CombatFeedback';
 import { ControlDeck } from './controlDeck/ControlDeck';
 import { soundFx } from './audioSynth';
+import { useGameStore } from '@/app/_store/useGameStore';
+import {
+    CHARACTERS,
+    getCharacterById,
+    getSpriteFrameUrl,
+} from '@/app/_data/characters';
 import {
     FighterState,
     TriviaQuestion,
@@ -69,44 +76,83 @@ const INITIAL_QUESTIONS: TriviaQuestion[] = [
 ];
 
 export const GameHUD: React.FC = () => {
-    // Fighters State (Aurelia vs Kira)
-    const [player, setPlayer] = useState<FighterState>({
-        id: 'aurelia',
-        name: 'AURELIA',
-        title: 'SPRINTER // LIGHTNING PLAYMAKER',
-        portraitUrl: '/icons/aurelia.png',
+    const { selectedCharacterId, opponentCharacterId, setSelectedCharacter } = useGameStore();
+
+    // Check optional URL query param override on mount (e.g. ?char=lucien or ?player=raizen)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const queryChar = params.get('char') || params.get('player');
+            if (queryChar && CHARACTERS.some((c) => c.id === queryChar)) {
+                setSelectedCharacter(queryChar);
+            }
+        }
+    }, [setSelectedCharacter]);
+
+    const playerConfig = getCharacterById(selectedCharacterId);
+    const opponentConfig = getCharacterById(opponentCharacterId);
+
+    // Fighters State
+    const [player, setPlayer] = useState<FighterState>(() => ({
+        id: playerConfig.id,
+        name: playerConfig.hudName,
+        title: playerConfig.title,
+        portraitUrl: playerConfig.avatarUrl,
         currentHp: 100,
         maxHp: 100,
         roundsWon: 1,
         maxRounds: 2,
         isHurt: false,
-    });
+    }));
 
-    const [opponent, setOpponent] = useState<FighterState>({
-        id: 'kira',
-        name: 'KIRA',
-        title: 'STRIKER // KINETIC POWERHOUSE',
-        portraitUrl: '/icons/kira.png',
+    const [opponent, setOpponent] = useState<FighterState>(() => ({
+        id: opponentConfig.id,
+        name: opponentConfig.hudName,
+        title: opponentConfig.title,
+        portraitUrl: opponentConfig.avatarUrl,
         currentHp: 100,
         maxHp: 100,
         roundsWon: 0,
         maxRounds: 2,
         isHurt: false,
-    });
+    }));
 
-    // Sprite Animation State (8-frame attack cycle for Aurelia)
+    // Update fighter metadata if active fighter configs change
+    useEffect(() => {
+        setPlayer((prev) => ({
+            ...prev,
+            id: playerConfig.id,
+            name: playerConfig.hudName,
+            title: playerConfig.title,
+            portraitUrl: playerConfig.avatarUrl,
+        }));
+    }, [playerConfig]);
+
+    useEffect(() => {
+        setOpponent((prev) => ({
+            ...prev,
+            id: opponentConfig.id,
+            name: opponentConfig.hudName,
+            title: opponentConfig.title,
+            portraitUrl: opponentConfig.avatarUrl,
+        }));
+    }, [opponentConfig]);
+
+    // Sprite Animation State (8-frame attack cycle for active character)
     const [playerFrame, setPlayerFrame] = useState<number>(1);
     const [isPlayerAttacking, setIsPlayerAttacking] = useState<boolean>(false);
     const attackAnimTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Preload sprite frames so animation plays smoothly without flicker
+    // Preload sprite frames for current fighters so animation plays smoothly without flicker
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            for (let i = 1; i <= 8; i++) {
-                const imgA = new window.Image();
-                imgA.src = `/sprites/aurelia sprite/s-${i}.png`;
-                const imgK = new window.Image();
-                imgK.src = `/sprites/kira sprite/s-${i}.png`;
+            for (let i = 1; i <= playerConfig.sprite.frameCount; i++) {
+                const img = new window.Image();
+                img.src = getSpriteFrameUrl(playerConfig, i);
+            }
+            for (let i = 1; i <= opponentConfig.sprite.frameCount; i++) {
+                const img = new window.Image();
+                img.src = getSpriteFrameUrl(opponentConfig, i);
             }
         }
         return () => {
@@ -114,7 +160,7 @@ export const GameHUD: React.FC = () => {
                 clearInterval(attackAnimTimerRef.current);
             }
         };
-    }, []);
+    }, [playerConfig, opponentConfig]);
 
     // Match Timer State
     const [timeLeft, setTimeLeft] = useState<number>(99);
@@ -134,7 +180,7 @@ export const GameHUD: React.FC = () => {
         isFull: false,
     });
 
-    // Action Abilities
+    // Action Abilities with cooldown & action point costs (Light: 1P, Heavy: 2P, Ult: 5P)
     const [abilities, setAbilities] = useState<ActionAbility[]>([
         {
             type: 'light',
@@ -144,6 +190,7 @@ export const GameHUD: React.FC = () => {
             cooldownTotal: 2.0,
             currentCooldown: 0,
             superCost: 0,
+            pointCost: 1,
             isReady: true,
             themeColor: 'blue',
         },
@@ -155,6 +202,7 @@ export const GameHUD: React.FC = () => {
             cooldownTotal: 4.5,
             currentCooldown: 0,
             superCost: 0,
+            pointCost: 2,
             isReady: true,
             themeColor: 'orange',
         },
@@ -166,10 +214,14 @@ export const GameHUD: React.FC = () => {
             cooldownTotal: 1.0,
             currentCooldown: 0,
             superCost: 100,
+            pointCost: 5,
             isReady: false,
             themeColor: 'red',
         },
     ]);
+
+    // Action Points Counter (Earn 1 on correct answer, lose 1 on wrong answer, consumed on attack)
+    const [actionPoints, setActionPoints] = useState<number>(0);
 
     // Question Panel State
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
@@ -306,17 +358,33 @@ export const GameHUD: React.FC = () => {
         return () => clearInterval(interval);
     }, [isMatchStarted, isAnswered]);
 
-    // Execute Attacks (Sprite animation on Q, W, E and opponent damage)
+    // Execute Attacks (Sprite animation on Q, W, E, consumes action points and timer cooldown)
     const triggerAttack = useCallback(
         (type: ActionType) => {
             if (!isMatchStarted) return;
             const targetAbility = abilities.find((a) => a.type === type);
             if (!targetAbility || targetAbility.currentCooldown > 0) return;
+
+            // Check if player has enough action points
+            if (actionPoints < targetAbility.pointCost) {
+                soundFx.playWrong();
+                addFloatingText(
+                    `NEED ${targetAbility.pointCost} PT${targetAbility.pointCost > 1 ? 'S' : ''}!`,
+                    'damage',
+                    'left'
+                );
+                return;
+            }
+
             if (type === 'ult' && superMeter.value < 100) return;
 
             soundFx.playHit(type);
 
-            // Animate Aurelia's 8 attack sprite frames (s-1.png -> s-8.png)
+            // Deduct Action Points (Light: 1, Heavy: 2, Ult: 5)
+            setActionPoints((prev) => Math.max(0, prev - targetAbility.pointCost));
+            addFloatingText(`-${targetAbility.pointCost} PT`, 'hit', 'left');
+
+            // Animate active character's attack sprite frames (e.g. s-1..s-8 or r-1..r-8)
             if (attackAnimTimerRef.current) {
                 clearInterval(attackAnimTimerRef.current);
                 attackAnimTimerRef.current = null;
@@ -325,11 +393,12 @@ export const GameHUD: React.FC = () => {
             setPlayerFrame(1);
 
             let currentFrame = 1;
+            const maxFrames = playerConfig.sprite.frameCount;
             const frameSpeed = type === 'light' ? 50 : type === 'heavy' ? 65 : 75;
 
             attackAnimTimerRef.current = setInterval(() => {
                 currentFrame++;
-                if (currentFrame <= 8) {
+                if (currentFrame <= maxFrames) {
                     setPlayerFrame(currentFrame);
                 } else {
                     if (attackAnimTimerRef.current) {
@@ -399,7 +468,7 @@ export const GameHUD: React.FC = () => {
                 setOpponent((prev) => ({ ...prev, isHurt: false }));
             }, 350);
         },
-        [isMatchStarted, abilities, superMeter.value, addFloatingText]
+        [isMatchStarted, abilities, superMeter.value, actionPoints, addFloatingText]
     );
 
     // Handle Question Answer Selection
@@ -424,20 +493,26 @@ export const GameHUD: React.FC = () => {
                 return { ...prev, value: nextVal, isFull: nextVal >= 100 };
             });
 
+            // Gain 1 Action Point for correct answer
+            setActionPoints((prev) => prev + 1);
+
             // Note: Enemy does NOT take damage on correct answer anymore!
             // Damage is only dealt when the player attacks with Q, W, or E.
+            addFloatingText('+1 ACTION POINT!', 'bonus', 'left');
             addFloatingText(`+${superGain} SUPER CHARGE!`, 'bonus', 'left');
             addFloatingText('CORRECT ANSWER!', 'streak', 'left');
             setComboCount((prev) => prev + 1);
         } else {
             soundFx.playWrong();
-            // Player takes minor retaliation hit
+            // Player takes minor retaliation hit and loses 1 Action Point
             setPlayer((prev) => {
                 const nextHp = Math.max(0, prev.currentHp - 10);
                 return { ...prev, currentHp: nextHp, isHurt: true };
             });
+            setActionPoints((prev) => Math.max(0, prev - 1));
 
             addFloatingText('-10 WRONG ANSWER!', 'damage', 'left');
+            addFloatingText('-1 ACTION POINT!', 'damage', 'left');
             setComboCount(0);
 
             setTimeout(() => {
@@ -492,6 +567,7 @@ export const GameHUD: React.FC = () => {
         setTimeLeft(99);
         setIsTimeOver(false);
         setSuperMeter({ value: 35, max: 100, isFull: false });
+        setActionPoints(0);
         setComboCount(0);
         setQuestionTimer(100);
         setIsAnswered(false);
@@ -511,6 +587,16 @@ export const GameHUD: React.FC = () => {
                 screenShake ? 'animate-shake' : ''
             }`}
         >
+            {/* Quick Nav: Return to Character Select */}
+            <div className="absolute top-3 left-4 z-40">
+                <Link
+                    href="/char_selection"
+                    className="px-2.5 py-1 text-[11px] font-mono font-bold tracking-wider text-neutral-300 hover:text-white bg-black/60 hover:bg-black/90 border border-neutral-700 hover:border-sky-400 rounded transition-all flex items-center gap-1.5 backdrop-blur-xs shadow-md"
+                    title="Return to Character Selection"
+                >
+                    <span>◀</span> FIGHTERS
+                </Link>
+            </div>
             {/* 1. BACKGROUND BATTLE STAGE */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <Image
@@ -524,7 +610,7 @@ export const GameHUD: React.FC = () => {
                 {/* Animated Ambient Embers & Lighting Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
 
-                {/* Left Fighter Sprite: Aurelia (Animated 8-frame attack cycle) */}
+                {/* Left Fighter Sprite: Selected Player (Animated 8-frame attack cycle) */}
                 <div
                     className={`absolute bottom-[18%] sm:bottom-[20%] md:bottom-[22%] left-[8%] sm:left-[12%] md:left-[16%] w-56 h-56 sm:w-72 sm:h-72 md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px] transition-transform duration-100 ${
                         player.isHurt
@@ -535,8 +621,9 @@ export const GameHUD: React.FC = () => {
                     }`}
                 >
                     <Image
-                        src={`/sprites/aurelia sprite/s-${playerFrame}.png`}
-                        alt="Aurelia Fighter"
+                        key={`${playerConfig.id}-${playerFrame}`}
+                        src={getSpriteFrameUrl(playerConfig, playerFrame)}
+                        alt={`${playerConfig.name} Fighter`}
                         fill
                         unoptimized
                         priority
@@ -544,7 +631,7 @@ export const GameHUD: React.FC = () => {
                     />
                 </div>
 
-                {/* Right Fighter Sprite: Kira (mirrored to face left) */}
+                {/* Right Fighter Sprite: Opponent (mirrored to face left) */}
                 <div
                     className={`absolute bottom-[18%] sm:bottom-[20%] md:bottom-[22%] right-[8%] sm:right-[12%] md:right-[16%] w-56 h-56 sm:w-72 sm:h-72 md:w-[340px] md:h-[340px] lg:w-[400px] lg:h-[400px] transition-transform duration-100 ${
                         opponent.isHurt
@@ -553,8 +640,9 @@ export const GameHUD: React.FC = () => {
                     }`}
                 >
                     <Image
-                        src="/sprites/kira sprite/s-1.png"
-                        alt="Kira Fighter"
+                        key={`${opponentConfig.id}-idle`}
+                        src={getSpriteFrameUrl(opponentConfig, 1)}
+                        alt={`${opponentConfig.name} Fighter`}
                         fill
                         unoptimized
                         priority
@@ -594,18 +682,25 @@ export const GameHUD: React.FC = () => {
                 onSelectAnswer={handleAnswerSelect}
                 abilities={abilities}
                 superMeter={superMeter}
+                actionPoints={actionPoints}
                 onTriggerAction={triggerAttack}
             />
 
             {/* Optional Reset Match Floating Pill if match ends */}
             {(opponent.currentHp <= 0 || player.currentHp <= 0 || isTimeOver) && (
-                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-auto flex items-center gap-3">
                     <button
                         onClick={resetMatch}
                         className="px-6 py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-black font-mono font-black text-sm uppercase tracking-widest rounded border-2 border-white shadow-[0_0_20px_rgba(245,158,11,1)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
                     >
                         ↻ PLAY AGAIN / REMATCH
                     </button>
+                    <Link
+                        href="/char_selection"
+                        className="px-6 py-2.5 bg-neutral-900/90 text-neutral-200 hover:text-white font-mono font-black text-sm uppercase tracking-widest rounded border-2 border-neutral-600 hover:border-cyan-400 shadow-lg hover:shadow-[0_0_15px_rgba(56,189,248,0.5)] transition-all cursor-pointer"
+                    >
+                        ⇄ SELECT FIGHTER
+                    </Link>
                 </div>
             )}
 
