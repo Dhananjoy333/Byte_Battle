@@ -1,79 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { CharacterRail, CharacterSummary } from '@/app/_components/char_selec/CharacterRail';
+import { useRouter } from 'next/navigation';
+import { CharacterRail } from '@/app/_components/char_selec/CharacterRail';
 import { CharacterStage } from '@/app/_components/char_selec/CharacterStage';
-import { CharacterInfo, CharacterStats } from '@/app/_components/char_selec/CharacterInfo';
-
-interface FullCharacter extends CharacterSummary {
-    role: string;
-    description: string;
-    fullImage: string;
-    stats: CharacterStats;
-}
-
-const CHARACTERS: FullCharacter[] = [
-    {
-        id: 'aurelia',
-        name: 'Aurelia Veyne',
-        role: 'Sprinter',
-        avatarUrl: '/icons/aurelia.png',
-        fullImage: '/char_portrait/aurelia.png',
-        description:
-            'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
-        stats: { power: 9, accel: 11, speed: 8 },
-    },
-    {
-        id: 'raze',
-        name: 'Raze',
-        role: 'Tactician',
-        avatarUrl: '/icons/raze.png',
-        fullImage: '/char_portrait/raze.png',
-        description:
-            'Calculates passing lanes with surgical precision and orchestrates high-tempo midfield transitions.',
-        stats: { power: 7, accel: 8, speed: 10 },
-    },
-    {
-        id: 'kira',
-        name: 'Kira Byte',
-        role: 'Striker',
-        avatarUrl: '/icons/kira.png',
-        fullImage: '/char_portrait/kira.png',
-        description:
-            'Unstoppable kinetic force capable of powering through deep defensive blocks with high-impact finishing.',
-        stats: { power: 12, accel: 7, speed: 6 },
-    },
-    {
-        id: 'lucien',
-        name: 'Lucien Frostvale',
-        role: 'Sprinter',
-        avatarUrl: '/icons/lucien.png',
-        fullImage: '/char_portrait/lucien.png',
-        description:
-            'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
-        stats: { power: 9, accel: 11, speed: 8 },
-    },
-    {
-        id: 'raizen',
-        name: 'Raizen',
-        role: 'Sprinter',
-        avatarUrl: '/icons/raizen.png',
-        fullImage: '/char_portrait/raizen.png',
-        description:
-            'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
-        stats: { power: 9, accel: 11, speed: 8 },
-    },
-];
+import { CharacterInfo } from '@/app/_components/char_selec/CharacterInfo';
+import { CHARACTERS, getCharacterById } from '@/app/_data/characters';
+import { useGameStore } from '@/app/_store/useGameStore';
 
 export default function CharacterSelectPage(): React.JSX.Element {
+    const router = useRouter();
+    const { selectedCharacterId, setSelectedCharacter } = useGameStore();
     const [selectedId, setSelectedId] = useState<string>(CHARACTERS[0].id);
 
-    const activeCharacter =
-        CHARACTERS.find((c) => c.id === selectedId) ?? CHARACTERS[0];
+    // Sync with Zustand stored selection once mounted
+    useEffect(() => {
+        if (selectedCharacterId && CHARACTERS.some((c) => c.id === selectedCharacterId)) {
+            setSelectedId(selectedCharacterId);
+        }
+    }, [selectedCharacterId]);
+
+    const activeCharacter = getCharacterById(selectedId);
 
     const handlePlay = (): void => {
-        console.log(`Starting match with ${activeCharacter.name}`);
+        setSelectedCharacter(selectedId);
+        router.push('/gameHUD');
     };
 
     return (
