@@ -6,6 +6,8 @@ import gsap from "gsap";
 import RoundedCorners from "./RoundedCorners";
 import Button from "./Button";
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 function Story() {
   const frameRef = useRef<HTMLImageElement | null>(null);
 
@@ -62,7 +64,7 @@ function Story() {
                   onMouseUp={handleMouseLeave}
                   onMouseEnter={handleMouseLeave}
                   onMouseMove={handleMouseMove}
-                  src="/img/entrance.webp"
+                   src={`${IMAGEKIT_URL}/img/entrance.webp`}
                   alt="entrance"
                   width={2000}
                   height={2000}

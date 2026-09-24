@@ -11,7 +11,7 @@ import ExpandButton from "@/app/_components/main_page/ExpandButton";
 gsap.registerPlugin(ScrollTrigger)
 
 const TOTAL_VIDEOS = 4
-const getVideoSrc = (index: number) => `videos/hero-${index}.mp4`
+const getVideoSrc = (index: number) => `/videos/hero-${index}.mp4`;;
 
 export default function Hero() {
   const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')

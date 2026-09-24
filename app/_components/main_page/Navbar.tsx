@@ -5,6 +5,8 @@ import { TiLocationArrow } from "react-icons/ti";
 import { useWindowScroll } from "react-use";
 import gsap from "gsap";
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 const navItems = ["Nexus", "Vault", "Prologue", "About", "Contact"];
 
 function Navbar() {
@@ -104,7 +106,7 @@ function Navbar() {
               <audio
                 ref={audioElementRef}
                 className="hidden"
-                src="/audio/loop.mp3"
+                src={`${IMAGEKIT_URL}/audio/loop.mp3`}
                 loop
               />
               {[1, 2, 3, 4].map((bar) => (
