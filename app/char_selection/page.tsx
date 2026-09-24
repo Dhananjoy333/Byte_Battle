@@ -9,6 +9,8 @@ import { CharacterInfo } from '@/app/_components/char_selec/CharacterInfo';
 import { CHARACTERS, getCharacterById } from '@/app/_data/characters';
 import { useGameStore } from '@/app/_store/useGameStore';
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 export default function CharacterSelectPage(): React.JSX.Element {
     const router = useRouter();
     const { selectedCharacterId, setSelectedCharacter } = useGameStore();
@@ -36,7 +38,7 @@ export default function CharacterSelectPage(): React.JSX.Element {
             {/* Custom Background Artwork */}
             <div className="pointer-events-none absolute inset-0 z-0">
                 <Image
-                    src="/img/char_selec_bg.png"
+                    src={`${IMAGEKIT_URL}/img/char_selec_bg.png`}
                     alt="Character Selection Background"
                     fill
                     priority
