@@ -22,6 +22,7 @@ export interface CharacterConfig {
     stats: CharacterStats;
     sprite: CharacterSpriteConfig;
 }
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 
 export const CHARACTERS: CharacterConfig[] = [
     {
@@ -30,13 +31,13 @@ export const CHARACTERS: CharacterConfig[] = [
         hudName: 'AURELIA',
         role: 'Sprinter',
         title: 'SPRINTER // LIGHTNING PLAYMAKER',
-        avatarUrl: '/icons/aurelia.png',
-        fullImage: '/char_portrait/aurelia.png',
+        avatarUrl: `${IMAGEKIT_URL}/icons/aurelia.png`,
+        fullImage: `${IMAGEKIT_URL}/char_portrait/aurelia.png`,
         description:
             'A lightning-fast playmaker who breaks formations and turns split seconds into decisive advantages.',
         stats: { power: 9, accel: 11, speed: 8 },
         sprite: {
-            dir: '/sprites/aurelia sprite',
+            dir: `${IMAGEKIT_URL}/sprites/aurelia sprite`,
             prefix: 's',
             frameCount: 8,
         },
@@ -47,13 +48,13 @@ export const CHARACTERS: CharacterConfig[] = [
         hudName: 'RAZE',
         role: 'Tactician',
         title: 'TACTICIAN // SURGICAL PRECISION',
-        avatarUrl: '/icons/raze.png',
-        fullImage: '/char_portrait/raze.png',
+        avatarUrl: `${IMAGEKIT_URL}/icons/raze.png`,
+        fullImage: `${IMAGEKIT_URL}/char_portrait/raze.png`,
         description:
             'Calculates passing lanes with surgical precision and orchestrates high-tempo midfield transitions.',
         stats: { power: 7, accel: 8, speed: 10 },
         sprite: {
-            dir: '/sprites/raze sprite',
+            dir: `${IMAGEKIT_URL}/sprites/raze sprite`,
             prefix: 'r',
             frameCount: 8,
         },
@@ -64,13 +65,13 @@ export const CHARACTERS: CharacterConfig[] = [
         hudName: 'KIRA',
         role: 'Striker',
         title: 'STRIKER // KINETIC POWERHOUSE',
-        avatarUrl: '/icons/kira.png',
-        fullImage: '/char_portrait/kira.png',
+        avatarUrl: `${IMAGEKIT_URL}/icons/kira.png`,
+        fullImage: `${IMAGEKIT_URL}/char_portrait/kira.png`,
         description:
             'Unstoppable kinetic force capable of powering through deep defensive blocks with high-impact finishing.',
         stats: { power: 12, accel: 7, speed: 6 },
         sprite: {
-            dir: '/sprites/kira sprite',
+            dir: `${IMAGEKIT_URL}/sprites/kira sprite`,
             prefix: 's',
             frameCount: 8,
         },
@@ -81,13 +82,13 @@ export const CHARACTERS: CharacterConfig[] = [
         hudName: 'LUCIEN',
         role: 'Sprinter',
         title: 'FROST // KINETIC STRATEGIST',
-        avatarUrl: '/icons/lucien.png',
-        fullImage: '/char_portrait/lucien.png',
+        avatarUrl: `${IMAGEKIT_URL}/icons/lucien.png`,
+        fullImage: `${IMAGEKIT_URL}/char_portrait/lucien.png`,
         description:
             'A master of icy momentum and swift angles, turning defensive stops into breakneck counter-attacks.',
         stats: { power: 9, accel: 11, speed: 8 },
         sprite: {
-            dir: '/sprites/lucien sprite',
+            dir: `${IMAGEKIT_URL}/sprites/lucien sprite`,
             prefix: 'r',
             frameCount: 8,
         },
@@ -98,13 +99,13 @@ export const CHARACTERS: CharacterConfig[] = [
         hudName: 'RAIZEN',
         role: 'Vanguard',
         title: 'VANGUARD // VOLTAGE SURGE',
-        avatarUrl: '/icons/raizen.png',
-        fullImage: '/char_portrait/raizen.png',
+        avatarUrl: `${IMAGEKIT_URL}/icons/raizen.png`,
+        fullImage: `${IMAGEKIT_URL}/char_portrait/raizen.png`,
         description:
             'An electrified frontline powerhouse that overwhelms rivals with explosive bursts and raw voltage.',
         stats: { power: 10, accel: 9, speed: 9 },
         sprite: {
-            dir: '/sprites/raizen sprite',
+            dir: `${IMAGEKIT_URL}/sprites/raizen sprite`,
             prefix: 'r',
             frameCount: 8,
         },

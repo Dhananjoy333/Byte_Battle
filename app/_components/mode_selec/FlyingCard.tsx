@@ -182,7 +182,7 @@ export default function FlyingCard({
             >
                 {/* Background Ambient Glow Aura when selected */}
                 <div
-                    className={`pointer-events-none absolute -inset-6 rounded-3xl bg-gradient-to-r ${glowGradient} blur-2xl transition-opacity duration-500 ${
+                    className={`pointer-events-none absolute -inset-6 rounded-3xl bg-linear-to-r ${glowGradient} blur-2xl transition-opacity duration-500 ${
                         isSelected ? 'opacity-100' : 'opacity-0'
                     }`}
                 />

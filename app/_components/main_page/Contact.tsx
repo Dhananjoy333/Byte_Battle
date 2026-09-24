@@ -1,41 +1,52 @@
 'use client'
+
 import Image from "next/image";
 import AnimatedTitle from "./AnimatedTitle";
 import Button from "./Button";
 
-type Props = {
-    src : string,
-    clipClass: string
-}
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 
-const ImageClipBox = ({ src, clipClass }:Props) => (
+type Props = {
+  src: string;
+  clipClass: string;
+};
+
+const ImageClipBox = ({ src, clipClass }: Props) => (
   <div className={clipClass}>
-    <Image src={src} alt="swordman" width={4000} height={4000}/>
+    <Image
+      src={src}
+      alt="swordman"
+      width={4000}
+      height={4000}
+    />
   </div>
 );
 
 function Contact() {
-    return (
-    <div id="contact" className="my-20 min-h-96 w-screen  px-10">
+  return (
+    <div id="contact" className="my-20 min-h-96 w-screen px-10">
       <div className="relative rounded-lg bg-black py-24 text-blue-50 sm:overflow-hidden">
+
         <div className="absolute -left-20 top-0 hidden h-full w-72 overflow-hidden sm:block lg:left-20 lg:w-96">
           <ImageClipBox
-            src="/img/contact-1.webp"
+            src={`${IMAGEKIT_URL}/img/contact-1.webp`}
             clipClass="contact-clip-path-1"
           />
+
           <ImageClipBox
-            src="/img/contact-2.webp"
+            src={`${IMAGEKIT_URL}/img/contact-2.webp`}
             clipClass="contact-clip-path-2 lg:translate-y-40 translate-y-60"
           />
         </div>
 
         <div className="absolute -top-40 left-20 w-60 sm:top-1/2 md:left-auto md:right-10 lg:top-20 lg:w-80">
           <ImageClipBox
-            src="/img/swordman-partial.webp"
+            src={`${IMAGEKIT_URL}/img/swordman-partial.webp`}
             clipClass="absolute md:scale-125"
           />
+
           <ImageClipBox
-            src="/img/swordman.webp"
+            src={`${IMAGEKIT_URL}/img/swordman.webp`}
             clipClass="sword-man-clip-path md:scale-125"
           />
         </div>
@@ -50,11 +61,15 @@ function Contact() {
             containerClass="special-font !md:text-[6.2rem] w-full font-zentry text-5xl! font-black! leading-[.9]!"
           />
 
-          <Button title="contact us" containerClass="mt-10 cursor-pointer" />
+          <Button
+            title="contact us"
+            containerClass="mt-10 cursor-pointer"
+          />
         </div>
+
       </div>
     </div>
   );
 }
 
-export default Contact
+export default Contact;

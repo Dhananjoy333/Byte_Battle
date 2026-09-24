@@ -82,7 +82,7 @@ export default function GameToast({
             <div
                 ref={toastRef}
                 role="alert"
-                className="relative overflow-hidden rounded-xl border border-yellow-400/50 bg-zinc-900/95 px-5 py-3.5 shadow-2xl backdrop-blur-xl shadow-yellow-500/20 flex items-center gap-3 text-sm font-medium tracking-wide text-zinc-100 min-w-[280px] max-w-md"
+                className="relative overflow-hidden rounded-xl border border-yellow-400/50 bg-zinc-900/95 px-5 py-3.5 shadow-2xl backdrop-blur-xl shadow-yellow-500/20 flex items-center gap-3 text-sm font-medium tracking-wide text-zinc-100 min-w-70 max-w-md"
             >
                 {/* Neon Warning Icon */}
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-yellow-400/20 text-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.5)]">
@@ -106,7 +106,7 @@ export default function GameToast({
                 {/* Bottom Countdown Progress Bar */}
                 <div
                     ref={progressRef}
-                    className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-yellow-500 to-amber-300"
+                    className="absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-yellow-500 to-amber-300"
                 />
             </div>
         </div>

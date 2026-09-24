@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/all'
 import AnimatedTitle from './AnimatedTitle'
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 gsap.registerPlugin(ScrollTrigger)
 
 function About() {
@@ -48,7 +49,7 @@ function About() {
         <div className='h-dvh w-screen' id='clip'>
             <div className='mask-clip-path about-image' >
                 <Image 
-                    src='/img/about.webp' 
+                    src={`${IMAGEKIT_URL}/img/about.webp`} 
                     alt='background' 
                     width={4000}
                     height={4000}
