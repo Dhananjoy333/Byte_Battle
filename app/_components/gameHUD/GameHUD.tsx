@@ -23,6 +23,8 @@ import {
     ActionType,
 } from './types';
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 const INITIAL_QUESTIONS: TriviaQuestion[] = [
     {
         id: 'q1',
@@ -600,7 +602,7 @@ export const GameHUD: React.FC = () => {
             {/* 1. BACKGROUND BATTLE STAGE */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <Image
-                    src="/img/battle_arena.jpg"
+                    src={`${IMAGEKIT_URL}/img/battle_arena.jpg`}
                     alt="Byte Battle Arena"
                     fill
                     priority
