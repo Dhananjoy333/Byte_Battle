@@ -48,11 +48,11 @@ function Story() {
     <section id="story" className="min-h-dvh w-screen bg-black text-blue-50">
       <div className="flex size-full flex-col items-center py-10 pb-24">
         <p className="font-general text-sm uppercase md:text-[17px]">
-          the multiversal ip world
+          THE ORIGIN OF BYTE BATTLE
         </p>
         <div className="relative size-full">
           <AnimatedTitle
-            title="The st<b>o</b>ry of <br/> a hidden real<b>m</b>"
+            title="when c<b>o</b>de becomes <br/> co<b>m</b>bat"
             sectionId="#story"
             containerClass="mt-5 pointer-events-none mix-blend-difference relative z-10"
           />
@@ -79,14 +79,12 @@ function Story() {
         <div className="-mt-130 flex w-full justify-center md:-mt-104 md:me-44 md:justify-end ">
           <div className="flex h-full w-fit flex-col items-center md:items-start">
             <p className="mt-3 max-w-sm text-center font-circular-web text-violet-50 md:text-start">
-              Where realms converge, lies Horizon and the boundless pillar.
-              Discover its secrets and shape your fate amidst infinite
-              opportunities.
+              A mysterious force has pulled warriors from different worlds into one arena. Here, knowledge is power, code is your weapon, and only the sharpest minds survive.
             </p>
 
             <Button
               id="realm-btn"
-              title="discover prologue"
+              title="DISCOVER THE STORY"
               containerClass="mt-5"
             />
           </div>

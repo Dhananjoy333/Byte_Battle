@@ -32,24 +32,22 @@ function About() {
     <div id='about' className='min-h-screen w-screen'>
         <div className='relative mb-8 mt-36 flex flex-col items-center gap-5'>
             <h2 className='font-general text-sm uppercase md:text-[17px]'>
-                Welcome to Horizon
+                Welcome to Byte Battle
             </h2>
             <AnimatedTitle 
-                title='Disc<b>o</b>ver the world&apos;s <br/> l<b>a</b>rgest shared adventure,'
+                title='Bec<b>o</b>me the world&apos;s <br/> t<b>o</b>p Player, and earn the Trophy'
                 containerClass='mt-5 !text-black text-center'
             />
             
             <div className='about-subtext'>
-                <p> The Game of Games begins-your life, now an epic MMORPG</p>
-                <p>
-                    Horizon unites every player from countless games and platform
+                <p> Battle other players, climb the leaderboard, and prove your coding skills to become the ultimate Byte Battle champion.
                 </p>
             </div>
         </div>
         <div className='h-dvh w-screen' id='clip'>
             <div className='mask-clip-path about-image' >
                 <Image 
-                    src={`${IMAGEKIT_URL}/img/about.webp`} 
+                    src={`${IMAGEKIT_URL}/img/about.png`} 
                     alt='background' 
                     width={4000}
                     height={4000}
