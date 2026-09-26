@@ -164,7 +164,7 @@ export default function FlyingCard({
     return (
         <div
             ref={cardRef}
-            className="pointer-events-auto absolute flex size-90 items-center justify-center select-none"
+            className="pointer-events-auto absolute flex size-80 sm:size-90 lg:size-[400px] xl:size-[460px] 2xl:size-[520px] items-center justify-center select-none"
         >
             {/* Interactive hover & click inner container */}
             <div
@@ -182,7 +182,7 @@ export default function FlyingCard({
             >
                 {/* Background Ambient Glow Aura when selected */}
                 <div
-                    className={`pointer-events-none absolute -inset-6 rounded-3xl bg-linear-to-r ${glowGradient} blur-2xl transition-opacity duration-500 ${
+                    className={`pointer-events-none absolute -inset-6 lg:-inset-8 rounded-3xl bg-linear-to-r ${glowGradient} blur-2xl lg:blur-3xl transition-opacity duration-500 ${
                         isSelected ? 'opacity-100' : 'opacity-0'
                     }`}
                 />
@@ -194,8 +194,8 @@ export default function FlyingCard({
 
                 {/* Selected Pill Badge */}
                 {isSelected && (
-                    <div className="absolute -bottom-3 z-20 flex items-center gap-1.5 rounded-full border border-yellow-300/80 bg-zinc-900/90 px-3 py-0.5 text-[10px] font-bold tracking-widest text-yellow-300 uppercase shadow-[0_0_15px_rgba(250,204,21,0.6)] backdrop-blur-md animate-pulse">
-                        <span className="size-1.5 rounded-full bg-yellow-400" />
+                    <div className="absolute -bottom-3 lg:-bottom-4 z-20 flex items-center gap-1.5 lg:gap-2 rounded-full border border-yellow-300/80 bg-zinc-900/90 px-3 lg:px-4 py-0.5 lg:py-1 text-[10px] lg:text-xs font-bold tracking-widest text-yellow-300 uppercase shadow-[0_0_15px_rgba(250,204,21,0.6)] backdrop-blur-md animate-pulse">
+                        <span className="size-1.5 lg:size-2 rounded-full bg-yellow-400" />
                         Selected
                     </div>
                 )}
