@@ -90,13 +90,11 @@ function Features() {
 
         <div className="px-5 py-32">
           <p className="font-circular-web text-lg text-blue-50">
-            Into the Metagame Layer
+            DISCOVER THE BATTLEVERSE
           </p>
 
           <p className="max-w-md font-circular-web text-lg text-blue-50 opacity-50">
-            Immerse yourself in a rich and ever-expanding universe where a
-            vibrant array of products converge into an interconnected overlay
-            experience on a world.
+            Immerse yourself in a rich and ever-expanding universe. Discover the story, master the battle system, choose your game mode, and meet the fighters waiting to enter the arena.
           </p>
         </div>
 

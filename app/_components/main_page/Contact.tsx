@@ -53,7 +53,7 @@ function Contact() {
 
         <div className="flex flex-col items-center text-center">
           <p className="mb-10 font-general text-[17px] uppercase">
-            Join Horizon
+            Join Byte Battle
           </p>
 
           <AnimatedTitle
