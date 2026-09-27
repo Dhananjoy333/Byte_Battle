@@ -78,7 +78,7 @@ function Story() {
         </div>
         <div className="-mt-130 flex w-full justify-center md:-mt-104 md:me-44 md:justify-end ">
           <div className="flex h-full w-fit flex-col items-center md:items-start">
-            <p className="mt-3 max-w-sm text-center font-circular-web text-violet-50 md:text-start">
+            <p className="mt-3 max-w-sm text-center font-circular-web text-violet-50 md:text-start z-10">
               A mysterious force has pulled warriors from different worlds into one arena. Here, knowledge is power, code is your weapon, and only the sharpest minds survive.
             </p>
 
