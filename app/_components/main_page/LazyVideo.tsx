@@ -155,13 +155,13 @@ export default function LazyVideo({
     >
       {/* Sleek dark shimmer placeholder while loading */}
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 z-0 animate-pulse bg-gradient-to-br from-neutral-900 via-neutral-950 to-neutral-900" />
+        <div className="absolute inset-0 z-0 animate-pulse bg-linear-to-br from-neutral-900 via-neutral-950 to-neutral-900" />
       )}
 
       {/* Styled fallback if video cannot load */}
       {hasError && (
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-neutral-900">
-          <div className="size-full opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-500 via-blue-500 to-transparent" />
+          <div className="size-full opacity-20 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-violet-500 via-blue-500 to-transparent" />
         </div>
       )}
 
