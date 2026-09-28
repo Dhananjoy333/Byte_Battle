@@ -9,6 +9,7 @@ import {
     GROUND_IMAGE_URL,
     CharacterTheme,
 } from '@/app/_data/characterThemes';
+import { FiArrowRight } from 'react-icons/fi';
 // Preserved Podium import per user instructions: "remove the podium (don't delete the code)"
 import { Podium } from './Podium';
 
@@ -181,7 +182,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 
             {/* Atmospheric elemental glow halo */}
             <div
-                className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-180 h-180 rounded-full blur-[150px] opacity-75 pointer-events-none transition-all duration-700"
+                className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 min-[480px]:w-96 sm:w-120 md:w-150 lg:w-180 h-64 min-[480px]:h-96 sm:h-120 md:h-150 lg:h-180 rounded-full blur-[70px] min-[480px]:blur-[100px] sm:blur-[120px] lg:blur-[150px] opacity-75 pointer-events-none transition-all duration-700"
                 style={{ backgroundColor: theme.glowColor }}
             />
 
@@ -208,13 +209,13 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         <div
             ref={ref}
             key={key ?? `char-${theme.id}`}
-            className="absolute inset-0 w-full h-full flex items-center -translate-y-30 justify-center pointer-events-none select-none will-change-transform"
+            className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none will-change-transform -translate-y-3 min-[480px]:-translate-y-5 sm:-translate-y-8 md:-translate-y-12 lg:-translate-y-16 xl:-translate-y-20 2xl:-translate-y-26"
         >
             {/* Centered Character Box with Bottom Alignment over Arena Floor */}
-            <div className="relative w-125 md:w-155 lg:w-165 h-[66vh] md:h-[74vh] max-h-195 min-h-115 flex items-end justify-center pb-8 md:pb-12">
+            <div className="relative w-[210px] min-[400px]:w-[240px] min-[480px]:w-[270px] sm:w-[320px] md:w-[350px] lg:w-[380px] xl:w-[440px] 2xl:w-[580px] h-[38vh] min-[480px]:h-[42vh] sm:h-[48vh] md:h-[54vh] lg:h-[60vh] xl:h-[66vh] 2xl:h-[72vh] max-h-[290px] min-[480px]:max-h-[340px] sm:max-h-[420px] md:max-h-[500px] lg:max-h-[580px] xl:max-h-[660px] 2xl:max-h-[760px] min-h-[180px] sm:min-h-[240px] lg:min-h-[320px] flex items-end justify-center pb-4 sm:pb-6 md:pb-8 lg:pb-10 2xl:pb-12">
                 {/* Contact grounding shadow on arena floor */}
                 <div
-                    className="absolute bottom-6 md:bottom-8 w-72 md:w-96 h-10 rounded-full blur-lg pointer-events-none -z-10"
+                    className="absolute bottom-4 sm:bottom-6 md:bottom-8 w-44 min-[480px]:w-56 sm:w-68 md:w-80 lg:w-88 2xl:w-96 h-6 sm:h-8 md:h-10 rounded-full blur-md sm:blur-lg pointer-events-none -z-10"
                     style={{
                         background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 75%)',
                     }}
@@ -222,7 +223,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 
                 {/* Ambient back-light rim glow */}
                 <div
-                    className="absolute bottom-16 w-60 h-60 rounded-full blur-[90px] opacity-40 pointer-events-none -z-5"
+                    className="absolute bottom-8 sm:bottom-12 md:bottom-16 w-36 sm:w-48 md:w-60 h-36 sm:h-48 md:h-60 rounded-full blur-[60px] sm:blur-[75px] md:blur-[90px] opacity-40 pointer-events-none -z-5"
                     style={{ backgroundColor: theme.accentColor }}
                 />
 
@@ -233,7 +234,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
                         alt={theme.name}
                         fill
                         priority
-                        sizes="(max-width: 1024px) 100vw, 700px"
+                        sizes="(max-width: 480px) 260px, (max-width: 640px) 320px, (max-width: 1024px) 400px, 700px"
                         style={{
                             objectFit: 'contain',
                             objectPosition: 'center bottom',
@@ -275,6 +276,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
                         objectFit: 'cover',
                         objectPosition: 'center bottom',
                     }}
+                    className="opacity-75"
                 />
 
                 {/* Subtle reactive floor glow reflection matching active character */}
@@ -313,15 +315,17 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
             */}
 
             {/* ============================================================== */}
-            {/* 5. PRIMARY CTA ACTION BUTTON ("Let's Play!")                   */}
+            {/* 5. PRIMARY CTA ACTION BUTTON ("Let's Play!") - Desktop Only    */}
+            {/* (On smaller devices, CTA is seamlessly anchored with the dock) */}
             {/* ============================================================== */}
-            <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+            <div className="hidden lg:block absolute bottom-5 xl:bottom-7 2xl:bottom-10 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
                 <button
                     type="button"
                     onClick={onPlay}
-                    className="px-14 py-4 rounded-2xl bg-linear-to-r from-[#ff4767] to-[#ff3358] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-extrabold text-base tracking-wider shadow-[0_12px_30px_rgba(255,71,103,0.55)] hover:shadow-[0_16px_36px_rgba(255,71,103,0.7)] transition-all duration-200 cursor-pointer"
+                    className="group flex items-center justify-center gap-2.5 px-10 xl:px-14 py-3 xl:py-3.5 rounded-2xl bg-linear-to-r from-[#ff4767] via-[#ff3358] to-[#ff2b4e] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-black text-sm xl:text-base tracking-wider uppercase shadow-[0_10px_28px_rgba(255,71,103,0.55)] hover:shadow-[0_14px_35px_rgba(255,71,103,0.75)] transition-all duration-200 cursor-pointer"
                 >
-                    Let&apos;s Play!
+                    <span>Let&apos;s Play!</span>
+                    <FiArrowRight className="size-4 xl:size-4.5 shrink-0 transition-transform group-hover:translate-x-1" />
                 </button>
             </div>
         </div>

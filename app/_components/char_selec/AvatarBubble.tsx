@@ -7,29 +7,49 @@ interface AvatarBubbleProps {
     avatarUrl: string;
     isActive?: boolean;
     onClick?: (id: string) => void;
+    size?: {
+        active: number;
+        inactive: number;
+    };
+    className?: string;
 }
 
 export const AvatarBubble: React.FC<AvatarBubbleProps> = ({
-                                                              id,
-                                                              name,
-                                                              avatarUrl,
-                                                              isActive = false,
-                                                              onClick,
-                                                          }) => {
+    id,
+    name,
+    avatarUrl,
+    isActive = false,
+    onClick,
+    size,
+    className = '',
+}) => {
+    const sizeStyle = size
+        ? {
+              width: isActive ? size.active : size.inactive,
+              height: isActive ? size.active : size.inactive,
+          }
+        : undefined;
+
     return (
         <button
             type="button"
             onClick={() => onClick?.(id)}
             aria-label={`Select character ${name}`}
+            style={sizeStyle}
             className={`
-                group relative flex items-center justify-center rounded-full
-                transition-all duration-500 ease-out
-                focus:outline-none
+                group relative flex shrink-0 items-center justify-center rounded-full
+                transition-all duration-300 ease-out
+                focus:outline-none select-none
                 ${
-                isActive
-                    ? "h-35 w-35 cursor-default"
-                    : "h-21 w-21 opacity-80 hover:opacity-100 cursor-pointer"
-            }
+                    size
+                        ? isActive
+                            ? 'cursor-default'
+                            : 'opacity-85 hover:opacity-100 cursor-pointer active:scale-95'
+                        : isActive
+                        ? 'h-28 w-28 xl:h-35 xl:w-35 cursor-default'
+                        : 'h-18 w-18 xl:h-21 xl:w-21 opacity-80 hover:opacity-100 cursor-pointer active:scale-95'
+                }
+                ${className}
             `}
         >
             {/* Neon Pink/Coral Outer Glow Ring for Active Item */}
