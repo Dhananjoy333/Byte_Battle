@@ -56,7 +56,7 @@ export const SegmentedProgressRing: React.FC<SegmentedProgressRingProps> = ({
         >
             {/* Inner background disc */}
             <div
-                className="absolute inset-[10px] rounded-full"
+                className="absolute inset-2.5 rounded-full"
                 style={{
                     background: 'radial-gradient(circle, rgba(25,55,95,0.6) 0%, rgba(10,25,50,0.3) 100%)',
                 }}

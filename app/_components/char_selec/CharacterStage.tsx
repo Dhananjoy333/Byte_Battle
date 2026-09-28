@@ -181,7 +181,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
 
             {/* Atmospheric elemental glow halo */}
             <div
-                className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] rounded-full blur-[150px] opacity-75 pointer-events-none transition-all duration-700"
+                className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-180 h-180 rounded-full blur-[150px] opacity-75 pointer-events-none transition-all duration-700"
                 style={{ backgroundColor: theme.glowColor }}
             />
 
@@ -195,7 +195,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
             />
 
             {/* Vertical Vignette Edge Shadows */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-black/60 pointer-events-none" />
         </div>
     );
 
@@ -208,10 +208,10 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
         <div
             ref={ref}
             key={key ?? `char-${theme.id}`}
-            className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none will-change-transform"
+            className="absolute inset-0 w-full h-full flex items-center -translate-y-30 justify-center pointer-events-none select-none will-change-transform"
         >
             {/* Centered Character Box with Bottom Alignment over Arena Floor */}
-            <div className="relative w-[500px] md:w-[620px] lg:w-[660px] h-[66vh] md:h-[74vh] max-h-[780px] min-h-[460px] flex items-end justify-center pb-8 md:pb-12">
+            <div className="relative w-125 md:w-155 lg:w-165 h-[66vh] md:h-[74vh] max-h-195 min-h-115 flex items-end justify-center pb-8 md:pb-12">
                 {/* Contact grounding shadow on arena floor */}
                 <div
                     className="absolute bottom-6 md:bottom-8 w-72 md:w-96 h-10 rounded-full blur-lg pointer-events-none -z-10"
@@ -319,7 +319,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
                 <button
                     type="button"
                     onClick={onPlay}
-                    className="px-14 py-4 rounded-2xl bg-gradient-to-r from-[#ff4767] to-[#ff3358] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-extrabold text-base tracking-wider shadow-[0_12px_30px_rgba(255,71,103,0.55)] hover:shadow-[0_16px_36px_rgba(255,71,103,0.7)] transition-all duration-200 cursor-pointer"
+                    className="px-14 py-4 rounded-2xl bg-linear-to-r from-[#ff4767] to-[#ff3358] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-extrabold text-base tracking-wider shadow-[0_12px_30px_rgba(255,71,103,0.55)] hover:shadow-[0_16px_36px_rgba(255,71,103,0.7)] transition-all duration-200 cursor-pointer"
                 >
                     Let&apos;s Play!
                 </button>
