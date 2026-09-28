@@ -145,3 +145,58 @@ export const CharacterRail: React.FC<CharacterRailProps> = ({
         </div>
     );
 };
+
+export interface CharacterDockProps {
+    characters: CharacterSummary[];
+    selectedId: string;
+    onSelectCharacter: (id: string, direction?: RailDirection) => void;
+    bubbleSize?: {
+        active: number;
+        inactive: number;
+    };
+    className?: string;
+}
+
+export const CharacterDock: React.FC<CharacterDockProps> = ({
+    characters,
+    selectedId,
+    onSelectCharacter,
+    bubbleSize,
+    className = '',
+}) => {
+    const selectedIndex = characters.findIndex((char) => char.id === selectedId);
+    const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+    const handleAvatarClick = (clickedId: string, index: number) => {
+        if (clickedId === selectedId) return;
+        const direction: RailDirection = index < activeIndex ? 'above' : 'below';
+        onSelectCharacter(clickedId, direction);
+    };
+
+    return (
+        <div className={`relative flex items-center justify-center select-none ${className}`}>
+            {/* Glassmorphic dock pill container */}
+            <div className="flex items-center justify-center gap-1.5 min-[400px]:gap-2 min-[480px]:gap-2.5 sm:gap-3.5 md:gap-4.5 rounded-full border border-zinc-800/80 bg-zinc-950/80 px-2.5 min-[400px]:px-3 min-[480px]:px-4 sm:px-6 py-1.5 sm:py-2 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.65)] ring-1 ring-white/5">
+                {characters.map((char, index) => {
+                    const isActive = char.id === selectedId;
+                    return (
+                        <div key={char.id} className="relative flex flex-col items-center">
+                            <AvatarBubble
+                                id={char.id}
+                                name={char.name}
+                                avatarUrl={char.avatarUrl}
+                                isActive={isActive}
+                                size={bubbleSize}
+                                onClick={(id) => handleAvatarClick(id, index)}
+                            />
+                            {/* Glowing active indicator dot */}
+                            {isActive && (
+                                <span className="absolute -bottom-1 sm:-bottom-1.5 size-1 sm:size-1.5 rounded-full bg-[#ff4767] shadow-[0_0_8px_#ff4767] animate-pulse" />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};

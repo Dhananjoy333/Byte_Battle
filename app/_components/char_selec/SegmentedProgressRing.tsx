@@ -27,7 +27,7 @@ export const SegmentedProgressRing: React.FC<SegmentedProgressRingProps> = ({
     const center = size / 2;
     const radius = (size - strokeWidth) / 2 - 2;
 
-    const gap = 4.5;
+    const gap = size < 65 ? 2.5 : size < 95 ? 3.5 : 4.5;
     const segmentAngle = 360 / maxSegments;
     const segmentSweep = segmentAngle - gap;
 
@@ -47,7 +47,9 @@ export const SegmentedProgressRing: React.FC<SegmentedProgressRingProps> = ({
         return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
     };
 
-    const isLarge = size >= 130;
+    const isSmall = size < 75;
+    const isMedium = size >= 75 && size < 125;
+    const isLarge = size >= 125;
 
     return (
         <div
@@ -101,16 +103,32 @@ export const SegmentedProgressRing: React.FC<SegmentedProgressRingProps> = ({
             </svg>
 
             {/* Inner Content Label & Icon */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white pointer-events-none">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white pointer-events-none leading-none">
                 <span
-                    className={`font-semibold tracking-wide text-white/90 ${
-                        isLarge ? 'text-sm' : 'text-xs'
+                    className={`font-semibold tracking-wide text-white/90 leading-tight ${
+                        isSmall
+                            ? 'text-[7px] min-[400px]:text-[8px]'
+                            : isMedium
+                            ? 'text-[10px]'
+                            : isLarge
+                            ? 'text-sm'
+                            : 'text-xs'
                     }`}
                 >
                     {label}
                 </span>
 
-                <div className={`text-white/90 ${isLarge ? 'mt-1.5' : 'mt-0.5'}`}>
+                <div
+                    className={`text-white/90 flex items-center justify-center ${
+                        isSmall
+                            ? 'mt-0.5 scale-75'
+                            : isMedium
+                            ? 'mt-1 scale-90'
+                            : isLarge
+                            ? 'mt-1.5 scale-110'
+                            : 'mt-0.5'
+                    }`}
+                >
                     {icon}
                 </div>
             </div>
