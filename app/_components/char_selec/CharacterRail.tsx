@@ -7,10 +7,12 @@ export interface CharacterSummary {
     avatarUrl: string;
 }
 
+export type RailDirection = 'above' | 'below' | 'next' | 'prev';
+
 interface CharacterRailProps {
     characters: CharacterSummary[];
     selectedId: string;
-    onSelectCharacter: (id: string) => void;
+    onSelectCharacter: (id: string, direction?: RailDirection) => void;
 }
 
 // Scaled coordinates along the circular arc for 140px active / 84px inactive bubbles
@@ -32,6 +34,16 @@ export const CharacterRail: React.FC<CharacterRailProps> = ({
     const total = characters.length;
     const selectedIndex = characters.findIndex((char) => char.id === selectedId);
     const activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
+
+    const handleAvatarClick = (clickedId: string, slotIndex: number) => {
+        if (clickedId === selectedId) return;
+        // When clicked slot is above center slot (slot 0 or 1): direction is 'above'
+        // -> character goes to LEFT and enters from RIGHT
+        // When clicked slot is below center slot (slot 3 or 4): direction is 'below'
+        // -> character goes to RIGHT and enters from LEFT
+        const direction: RailDirection = slotIndex < TARGET_SLOT_INDEX ? 'above' : 'below';
+        onSelectCharacter(clickedId, direction);
+    };
 
     return (
         <div className="relative h-162.5 w-90 select-none">
@@ -124,7 +136,7 @@ export const CharacterRail: React.FC<CharacterRailProps> = ({
                                 name={char.name}
                                 avatarUrl={char.avatarUrl}
                                 isActive={isActive}
-                                onClick={onSelectCharacter}
+                                onClick={(id) => handleAvatarClick(id, slotIndex)}
                             />
                         </div>
                     );
