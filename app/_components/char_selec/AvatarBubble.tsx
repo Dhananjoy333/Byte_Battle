@@ -27,8 +27,8 @@ export const AvatarBubble: React.FC<AvatarBubbleProps> = ({
                 focus:outline-none
                 ${
                 isActive
-                    ? "h-[140px] w-[140px]"
-                    : "h-[84px] w-[84px] opacity-60 hover:opacity-100"
+                    ? "h-[140px] w-[140px] cursor-default"
+                    : "h-[84px] w-[84px] opacity-60 hover:opacity-100 cursor-pointer"
             }
             `}
         >

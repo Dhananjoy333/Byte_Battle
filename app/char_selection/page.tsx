@@ -1,29 +1,43 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CharacterRail } from '@/app/_components/char_selec/CharacterRail';
+import { CharacterRail, RailDirection } from '@/app/_components/char_selec/CharacterRail';
 import { CharacterStage } from '@/app/_components/char_selec/CharacterStage';
 import { CharacterInfo } from '@/app/_components/char_selec/CharacterInfo';
 import { CHARACTERS, getCharacterById } from '@/app/_data/characters';
 import { useGameStore } from '@/app/_store/useGameStore';
 
-const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
-
 export default function CharacterSelectPage(): React.JSX.Element {
     const router = useRouter();
     const { selectedCharacterId, setSelectedCharacter } = useGameStore();
     const [selectedId, setSelectedId] = useState<string>(CHARACTERS[0].id);
+    const [direction, setDirection] = useState<RailDirection>('above');
+    const isBusyRef = useRef<boolean>(false);
 
     // Sync with Zustand stored selection once mounted
     useEffect(() => {
         if (selectedCharacterId && CHARACTERS.some((c) => c.id === selectedCharacterId)) {
-            setSelectedId(selectedCharacterId);
+            const frame = requestAnimationFrame(() => {
+                setSelectedId(selectedCharacterId);
+            });
+            return () => cancelAnimationFrame(frame);
         }
     }, [selectedCharacterId]);
 
     const activeCharacter = getCharacterById(selectedId);
+
+    const handleSelectCharacter = (newId: string, dir?: RailDirection) => {
+        if (newId === selectedId || isBusyRef.current) return;
+        isBusyRef.current = true;
+        setDirection(dir ?? 'above');
+        setSelectedId(newId);
+
+        // Safety timeout to ensure interaction never locks up if interrupted
+        setTimeout(() => {
+            isBusyRef.current = false;
+        }, 800);
+    };
 
     const handlePlay = (): void => {
         setSelectedCharacter(selectedId);
@@ -32,50 +46,42 @@ export default function CharacterSelectPage(): React.JSX.Element {
 
     return (
         <main
-            className="relative h-screen w-screen overflow-hidden bg-[#131d31] flex items-center justify-center"
+            className="relative h-screen w-screen overflow-hidden bg-black flex items-center justify-center select-none"
             suppressHydrationWarning
         >
-            {/* Custom Background Artwork */}
-            <div className="pointer-events-none absolute inset-0 z-0">
-                <Image
-                    src={`${IMAGEKIT_URL}/img/char_selec_bg.png`}
-                    alt="Character Selection Background"
-                    fill
-                    priority
-                    className="object-cover object-center"
-                />
-            </div>
+            {/* ============================================================== */}
+            {/* Center Stage: Color BG + Ground + Character Cutout with GSAP    */}
+            {/* ============================================================== */}
+            <CharacterStage
+                characterId={selectedId}
+                direction={direction}
+                onPlay={handlePlay}
+                isBusyRef={isBusyRef}
+            />
 
-            {/* Stage: Character + Podium (Centered vertically across screen) */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none pt-2">
-                <div className="pointer-events-auto w-full max-w-2xl flex flex-col items-center justify-center">
-                    <CharacterStage
-                        characterId={activeCharacter.id}
-                        characterImage={activeCharacter.fullImage}
-                        characterName={activeCharacter.name}
-                        ballImage="/assets/soccer-ball.png"
-                        onPlay={handlePlay}
-                    />
-                </div>
-            </div>
-
-            {/* Left Section: Character Selection Arc */}
-            <div className="absolute left-10 md:left-20 top-1/2 -translate-y-1/2 z-20">
+            {/* ============================================================== */}
+            {/* Left Section: Circular Arc Character Carousel                  */}
+            {/* ============================================================== */}
+            <div className="absolute left-8 md:left-16 lg:left-20 top-1/2 -translate-y-1/2 z-20 pointer-events-auto">
                 <CharacterRail
                     characters={CHARACTERS}
                     selectedId={selectedId}
-                    onSelectCharacter={setSelectedId}
+                    onSelectCharacter={handleSelectCharacter}
                 />
             </div>
 
-            {/* Right Section: Character Info & Stats */}
-            <div className="absolute right-12 md:right-24 top-1/2 -translate-y-1/2 z-20 max-w-md w-full">
-                <CharacterInfo
-                    role={activeCharacter.role}
-                    name={activeCharacter.name}
-                    description={activeCharacter.description}
-                    stats={activeCharacter.stats}
-                />
+            {/* ============================================================== */}
+            {/* Right Section: Character Info & Stats Description              */}
+            {/* ============================================================== */}
+            <div className="absolute right-8 md:right-16 lg:right-24 top-1/2 -translate-y-1/2 z-20 max-w-md w-full pointer-events-auto">
+                <div key={activeCharacter.id} className="animate-in fade-in slide-in-from-right-3 duration-300">
+                    <CharacterInfo
+                        role={activeCharacter.role}
+                        name={activeCharacter.name}
+                        description={activeCharacter.description}
+                        stats={activeCharacter.stats}
+                    />
+                </div>
             </div>
         </main>
     );
