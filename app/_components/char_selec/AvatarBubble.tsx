@@ -27,22 +27,22 @@ export const AvatarBubble: React.FC<AvatarBubbleProps> = ({
                 focus:outline-none
                 ${
                 isActive
-                    ? "h-[140px] w-[140px] cursor-default"
-                    : "h-[84px] w-[84px] opacity-60 hover:opacity-100 cursor-pointer"
+                    ? "h-35 w-35 cursor-default"
+                    : "h-21 w-21 opacity-80 hover:opacity-100 cursor-pointer"
             }
             `}
         >
             {/* Neon Pink/Coral Outer Glow Ring for Active Item */}
             {isActive && (
                 <>
-                    <div className="absolute -inset-[3px] rounded-full border-[3px] border-[#ff4767] shadow-[0_0_20px_rgba(255,71,103,0.5)]" />
-                    <div className="absolute -inset-[1px] rounded-full border border-white/60" />
+                    <div className="absolute -inset-0.75 rounded-full border-[3px] border-[#ff4767] shadow-[0_0_20px_rgba(255,71,103,0.5)]" />
+                    <div className="absolute -inset-px rounded-full border border-white/60" />
                 </>
             )}
 
             {/* Subtle background disc for inactive items */}
             {!isActive && (
-                <div className="absolute -inset-1 rounded-full bg-white/10 backdrop-blur-sm" />
+                <div className="absolute -inset-1 rounded-full bg-white/40 backdrop-blur-sm" />
             )}
 
             {/* Inner Image Mask */}
@@ -50,7 +50,7 @@ export const AvatarBubble: React.FC<AvatarBubbleProps> = ({
                 className={`
                     relative h-full w-full overflow-hidden rounded-full
                     bg-slate-900/60
-                    ${isActive ? "border-2 border-[#ff4767]" : "border border-white/15"}
+                    ${isActive ? "border-2 border-[#ff4767]" : "border border-white/35"}
                 `}
             >
                 <Image

@@ -1,0 +1,15 @@
+services:
+  byte-battle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_IMAGEKIT_URL: https://ik.imagekit.io/oq0eiylwn/Byte_Battle
+    container_name: byte-battle
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_IMAGEKIT_URL=https://ik.imagekit.io/oq0eiylwn/Byte_Battle
+    restart: unless-stopped

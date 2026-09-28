@@ -23,12 +23,12 @@ export const CharacterInfo: React.FC<CharacterInfoProps> = ({
     return (
         <div className="relative flex flex-col items-start max-w-xl select-none">
             {/* Ghost/Watermark Role Header */}
-            <span className="text-7xl font-black tracking-wider text-white/10 uppercase select-none pointer-events-none -mb-6">
+            <span className="text-7xl font-black tracking-wider text-white/30 uppercase select-none pointer-events-none -mb-6">
                 {role}
             </span>
 
             {/* Main Name & Action Button */}
-            <div className="flex items-center gap-5">
+            <div className="flex items-center">
                 <h1 className="text-7xl md:text-8xl font-black tracking-tight text-white drop-shadow-lg">
                     {name}
                 </h1>
