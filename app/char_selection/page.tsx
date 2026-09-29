@@ -45,7 +45,7 @@ export default function CharacterSelectPage(): React.JSX.Element {
 
     const handlePlay = (): void => {
         setSelectedCharacter(selectedId);
-        router.push('/gameHUD');
+        router.push('/territory_battle');
     };
 
     return (

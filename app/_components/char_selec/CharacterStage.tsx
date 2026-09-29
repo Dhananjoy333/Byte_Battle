@@ -11,7 +11,7 @@ import {
 } from '@/app/_data/characterThemes';
 import { FiArrowRight } from 'react-icons/fi';
 // Preserved Podium import per user instructions: "remove the podium (don't delete the code)"
-import { Podium } from './Podium';
+// import { Podium } from './Podium';
 
 export type StageDirection = 'above' | 'below' | 'next' | 'prev';
 
@@ -212,7 +212,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
             className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none select-none will-change-transform -translate-y-3 min-[480px]:-translate-y-5 sm:-translate-y-8 md:-translate-y-12 lg:-translate-y-16 xl:-translate-y-20 2xl:-translate-y-26"
         >
             {/* Centered Character Box with Bottom Alignment over Arena Floor */}
-            <div className="relative w-[210px] min-[400px]:w-[240px] min-[480px]:w-[270px] sm:w-[320px] md:w-[350px] lg:w-[380px] xl:w-[440px] 2xl:w-[580px] h-[38vh] min-[480px]:h-[42vh] sm:h-[48vh] md:h-[54vh] lg:h-[60vh] xl:h-[66vh] 2xl:h-[72vh] max-h-[290px] min-[480px]:max-h-[340px] sm:max-h-[420px] md:max-h-[500px] lg:max-h-[580px] xl:max-h-[660px] 2xl:max-h-[760px] min-h-[180px] sm:min-h-[240px] lg:min-h-[320px] flex items-end justify-center pb-4 sm:pb-6 md:pb-8 lg:pb-10 2xl:pb-12">
+            <div className="relative w-52.5 min-[400px]:w-60 min-[480px]:w-67.5 sm:w-[320px] md:w-87.5 lg:w-95 xl:w-110 2xl:w-145 h-[38vh] min-[480px]:h-[42vh] sm:h-[48vh] md:h-[54vh] lg:h-[60vh] xl:h-[66vh] 2xl:h-[72vh] max-h-72.5 min-[480px]:max-h-85 sm:max-h-105 md:max-h-125 lg:max-h-145 xl:max-h-165 2xl:max-h-190 min-h-45 sm:min-h-60 lg:min-h-80 flex items-end justify-center pb-4 sm:pb-6 md:pb-8 lg:pb-10 2xl:pb-12">
                 {/* Contact grounding shadow on arena floor */}
                 <div
                     className="absolute bottom-4 sm:bottom-6 md:bottom-8 w-44 min-[480px]:w-56 sm:w-68 md:w-80 lg:w-88 2xl:w-96 h-6 sm:h-8 md:h-10 rounded-full blur-md sm:blur-lg pointer-events-none -z-10"
