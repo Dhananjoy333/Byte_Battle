@@ -11,6 +11,7 @@ export interface CharacterTheme {
     bgImageUrl?: string;
     charImageUrl: string;
 }
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 
 export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
     aurelia: {
@@ -65,7 +66,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
     },
 };
 
-export const GROUND_IMAGE_URL = '/selec_char/ground.png';
+export const GROUND_IMAGE_URL = `${IMAGEKIT_URL}/selec_char/ground.png`;
 
 export function getCharacterTheme(id: string): CharacterTheme {
     return CHARACTER_THEMES[id] ?? CHARACTER_THEMES['aurelia'];

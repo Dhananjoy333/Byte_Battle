@@ -30,9 +30,14 @@ import { CellDuelModal } from './CellDuelModal';
 import { GameOverModal } from './GameOverModal';
 import { useAITerritoryExpansion } from './useAITerritoryExpansion';
 import { useCellDuel } from './useCellDuel';
-import { FiZap, FiClock } from 'react-icons/fi';
+import { useGameStore } from '@/app/_store/useGameStore';
+import { getCharacterById } from '@/app/_data/characters';
+import Image from 'next/image';
 
 const CELL_CAPTURE_COST = 1;
+
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 
 export const GameBoard: React.FC = () => {
   const router = useRouter();
@@ -59,6 +64,18 @@ export const GameBoard: React.FC = () => {
 
   // Local user is currently player1
   const localPlayer: CellOwner = 'player1';
+
+  // Character selection integration from store (with graceful fallback to Raze)
+  const { selectedCharacterId } = useGameStore();
+  const [mounted, setMounted] = useState<boolean>(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const activeChar = getCharacterById(mounted && selectedCharacterId ? selectedCharacterId : 'raze');
+  const playerCharImg = activeChar?.id && activeChar.id !== 'raze' 
+    ? `/selec_char/${activeChar.id}.png` 
+    : '/territory_img/raze.png';
+  const playerCharName = activeChar?.hudName || 'RAZE';
 
   // 7. Cell Duel & Conflict Management Hook
   const {
@@ -129,16 +146,12 @@ export const GameBoard: React.FC = () => {
   // 9. Match Timer Countdown & Low-Time urgency
   const handleMatchTimeExpired = useCallback(() => {
     setMatchState((prev) => {
-      // If match was already finalized (e.g., base capture), do not overwrite
       if (prev.status === 'finished') return prev;
 
-      // Rule: Main match timer has priority over active Cell Duel
-      // Immediately cancel any active duel without transferring cell or refunding
       cancelCurrentConflict();
       setIsQuestionModalOpen(false);
       setSelectedCellId(null);
 
-      // Check if a base was captured at the exact moment
       const baseCheck = checkBaseCapture(board, BOARD_SIZE);
       if (baseCheck.isCaptured && baseCheck.winner) {
         const { p1Cells, p2Cells } = getTerritoryCounts(board);
@@ -153,7 +166,6 @@ export const GameBoard: React.FC = () => {
         };
       }
 
-      // Final territory count comparison (ownership across all cells)
       const { p1Cells, p2Cells } = getTerritoryCounts(board);
       const { result, winner } = determineTimedResult(p1Cells, p2Cells);
 
@@ -204,7 +216,6 @@ export const GameBoard: React.FC = () => {
   );
 
   // 11. Autonomous Player 2 AI territory expansion
-  // MUST PAUSE during conflict/duel AND completely stop when match ends
   useAITerritoryExpansion({
     board,
     setBoard,
@@ -240,7 +251,7 @@ export const GameBoard: React.FC = () => {
     return set;
   }, [board, localPlayer, isConflictActive, isGameFinished, connectedP1CellIds]);
 
-  // 13. Challengeable enemy cell IDs for Player 1 (including enemy base HQ!)
+  // 13. Challengeable enemy cell IDs for Player 1
   const challengeableEnemyCellIds = useMemo(() => {
     if (isConflictActive || isGameFinished) return new Set<string>();
     const enemyCells = getChallengeableEnemyCells(
@@ -252,7 +263,7 @@ export const GameBoard: React.FC = () => {
     return new Set<string>(enemyCells.map((c) => c.id));
   }, [board, localPlayer, isConflictActive, isGameFinished, connectedP1CellIds]);
 
-  // Territories count (all owned cells)
+  // Territories count
   const { p1Cells: player1Count, p2Cells: player2Count } = useMemo(
     () => getTerritoryCounts(board),
     [board]
@@ -265,14 +276,12 @@ export const GameBoard: React.FC = () => {
         return;
       }
 
-      // 1. If clicking an interactable EMPTY cell (connected adjacency required)
       if (cell.owner === null) {
         if (!canCaptureCell(board, cell, localPlayer, connectedP1CellIds, BOARD_SIZE)) return;
         setSelectedCellId((prev) => (prev === cell.id ? null : cell.id));
         return;
       }
 
-      // 2. If clicking an adjacent ENEMY cell (including enemy base HQ!)
       if (cell.owner === 'player2') {
         if (!canChallengeCell(board, cell, localPlayer, connectedP1CellIds, BOARD_SIZE)) return;
         setSelectedCellId((prev) => (prev === cell.id ? null : cell.id));
@@ -315,7 +324,7 @@ export const GameBoard: React.FC = () => {
     setSelectedCellId(null);
   }, []);
 
-  // Banking reward from question session: bankedBits += unbankedBits
+  // Banking reward from question session
   const handleBankBits = useCallback(
     (earnedBits: number) => {
       if (isGameFinished) return;
@@ -348,215 +357,377 @@ export const GameBoard: React.FC = () => {
     [board, selectedCellId]
   );
 
-  // Low-time visual feedback: <=30s amber highlight, <=10s urgent pulse
+  // Low-time visual urgency: <=30s amber highlight, <=10s urgent pulse
   const isLowTime = remainingSeconds <= 30;
   const isCriticalTime = remainingSeconds <= 10;
 
-  const timerCardClasses = isCriticalTime
-    ? 'border-rose-500/80 bg-rose-950/60 shadow-[0_0_20px_rgba(244,63,94,0.45)] text-rose-300 animate-pulse'
-    : isLowTime
-    ? 'border-amber-500/50 bg-amber-950/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-amber-300'
-    : 'border-zinc-800 bg-zinc-900/80 text-zinc-200';
-
-  const timerClockColor = isCriticalTime
-    ? 'text-rose-400'
-    : isLowTime
-    ? 'text-amber-400'
-    : 'text-zinc-400';
-
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl px-3 sm:px-4 py-3 select-none">
-      {/* Prominent Match Countdown Timer Bar */}
-      <div className="w-full max-w-[min(92vw,560px)] flex items-center justify-center mb-3">
+    <div className="flex flex-col items-center w-full select-none">
+      {/* ============================================================== */}
+      {/* Unified Gameplay Arena (Player HUD | Center Arena | Enemy HUD) */}
+      {/* ============================================================== */}
+      <div className="flex flex-row items-start justify-center gap-2 sm:gap-3 lg:gap-4 xl:gap-6 2xl:gap-0 w-full max-w-480 2xl:max-w-600 px-1 sm:px-2">
+        {/* ============================================================ */}
+        {/* LEFT COLUMN: Player 1 (You)                                   */}
+        {/* Character Bust + Point Card + Answer Questions Button        */}
+        {/* ============================================================ */}
         <div
-          className={`flex items-center gap-2.5 px-5 sm:px-7 py-1.5 sm:py-2 rounded-2xl border backdrop-blur-md transition-all duration-300 ${timerCardClasses}`}
+          className="flex 2xl:translate-y-20 2xl:translate-x-25 flex-col items-center xl:items-end shrink-0"
+          style={{ width: 'clamp(270px, 23vw, 460px)' }}
         >
-          <FiClock className={`size-4 sm:size-5 ${timerClockColor}`} />
-          <div className="flex flex-col items-center leading-none">
-            <span className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-[0.2em] opacity-80">
-              Match Time
-            </span>
-            <span className="text-xl sm:text-2xl font-mono font-black tracking-widest mt-0.5">
-              {formatMatchTime(remainingSeconds)}
-            </span>
-          </div>
-        </div>
-      </div>
+          {/* Character Bust & Graffiti Tag */}
+          <div className="flex items-end gap-1.5 sm:gap-2 relative -mb-4 sm:-mb-6 md:-mb-8 xl:-mb-10 z-10 w-full justify-center xl:justify-end ">
+            {/* Player Bust Image */}
+            <div
+              className="relative shrink-0 overflow-visible"
+              style={{
+                width: 'clamp(130px, 12vw, 240px)',
+                height: 'clamp(130px, 12vw, 240px)',
+              }}
+            >
+              <div className="absolute inset-0 rounded-full bg-amber-400/25 blur-2xl pointer-events-none scale-125" />
+              <Image
+                src={playerCharImg}
+                alt={playerCharName}
+                fill
+                className="w-full h-full object-contain object-bottom drop-shadow-[0_0_20px_rgba(250,204,21,0.7)] pointer-events-none scale-110 origin-bottom"
+              />
+            </div>
 
-      {/* Top Telemetry / Status Bar */}
-      <div className="w-full max-w-[min(92vw,560px)] flex items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
-        {/* Player 1 Stats */}
-        <div className="flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-zinc-900/80 border border-emerald-500/30 backdrop-blur-md">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-          <div className="flex flex-col leading-tight">
-            <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-emerald-400">
-              Player 1 (You)
-            </span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-xs sm:text-sm font-extrabold text-zinc-100">
+            {/* Stylized Graffiti Text */}
+            <div className="mb-2 sm:mb-3 md:mb-15 select-none">
+              <span className="font-black italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-6xl text-yellow-300 tracking-tighter drop-shadow-[0_3px_6px_rgba(0,0,0,0.9),0_0_15px_rgba(250,204,21,0.8)] -rotate-6 block font-sans">
+                {playerCharName}
+              </span>
+            </div>
+          </div>
+
+          {/* Player Point Card Frame using hero_point_card.png */}
+          <div className="relative w-full 2xl:w-150 z-10 aspect-3244/1312 select-none shrink-0 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]">
+            <Image
+              src={`${IMAGEKIT_URL}/territory_img/hero_point_card.png`}
+              alt="Player HUD Card Frame"
+              fill
+              className="w-full h-full object-contain pointer-events-none select-none"
+            />
+
+            {/* Top Tab Overlay */}
+            <div className="absolute top-[12%] left-[16%] right-[16%] flex items-center justify-center pointer-events-none">
+              <span className="font-black text-[10px] sm:text-xs md:text-sm lg:text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                PLAYER (YOU)
+              </span>
+            </div>
+
+            {/* Dynamic Cells Count */}
+            <div className="absolute top-[34%] left-[47%] right-[6%] flex items-center pointer-events-none">
+              <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
                 {player1Count} Cells
               </span>
               {player1Count !== connectedP1CellIds.size && (
-                <span className="text-[9px] font-mono font-bold text-emerald-400/80">
-                  ({connectedP1CellIds.size} active)
+                <span className="ml-1 text-[9px] sm:text-[10px] md:text-xs font-mono font-bold text-emerald-600">
+                  ({connectedP1CellIds.size} act)
                 </span>
               )}
             </div>
+
+            {/* Dynamic Bits Count (Clickable to open questions) */}
+            <div className="absolute top-[59%] left-[47%] right-[6%] flex items-center">
+              <button
+                type="button"
+                disabled={isConflictActive || isGameFinished}
+                onClick={() => setIsQuestionModalOpen(true)}
+                className={`flex items-center gap-1.5 font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl tracking-wide font-sans transition-all cursor-pointer ${
+                  isConflictActive || isGameFinished
+                    ? 'text-zinc-500 cursor-not-allowed'
+                    : 'text-zinc-900 hover:text-amber-600 active:scale-95'
+                }`}
+                title="Earn more Bits"
+              >
+                <span>Bits: {bankedBits}</span>
+                {!isGameFinished && (
+                  <span className="text-[10px] sm:text-xs bg-yellow-400 hover:bg-yellow-300 text-zinc-950 px-1.5 py-0.5 rounded-md font-black shadow-xs">
+                    +
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Answer Question Action Button (Positioned directly below Player Card) */}
+          <div className="w-full flex justify-center mt-1 sm:mt-2 2xl:mt-3 2xl:mr-20">
+            <button
+              type="button"
+              aria-label="Answer Question"
+              disabled={isConflictActive || isGameFinished}
+              onClick={() => setIsQuestionModalOpen(true)}
+              className={`group relative aspect-2114/744 w-full max-w-67.5 sm:max-w-[320px] md:max-w-90 xl:max-w-100 2xl:max-w-[460px] flex items-center justify-center transition-all duration-150 ease-out select-none ${
+                isConflictActive || isGameFinished
+                  ? 'opacity-50 grayscale cursor-not-allowed pointer-events-none'
+                  : 'cursor-pointer hover:scale-[1.03] hover:brightness-105 active:scale-[0.98] active:brightness-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.5)] hover:drop-shadow-[0_8px_22px_rgba(250,204,21,0.4)]'
+              }`}
+            >
+              {/* Ornate Fantasy Game UI Button Frame Asset */}
+              <Image
+                src={`${IMAGEKIT_URL}/territory_img/button.png`}
+                alt="Answer Question Button Frame"
+                fill
+                priority
+                sizes="(max-width: 640px) 270px, (max-width: 1024px) 360px, 460px"
+                className="w-full h-full object-contain pointer-events-none select-none"
+              />
+
+              {/* Centered Arcade Text inside Creamy Gold Center Area */}
+              <span className="absolute inset-x-[15%] top-[56.8%] -translate-y-1/2 flex items-center justify-center font-zentry font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl tracking-wider uppercase text-[#0a1936] drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)] [text-shadow:0_1px_0_rgba(255,255,255,0.9),0_-1px_0_rgba(255,255,255,0.7),1px_0_0_rgba(255,255,255,0.8),-1px_0_0_rgba(255,255,255,0.8)] pointer-events-none select-none transition-transform duration-150">
+                ANSWER QUESTION
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Banked Bits Display */}
-        <div className="flex flex-col items-center px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl bg-zinc-900/90 border border-yellow-400/40 shadow-[0_0_20px_rgba(250,204,21,0.15)] backdrop-blur-md">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-400/90">
-            Banked
-          </span>
-          <span className="text-base sm:text-xl font-black text-yellow-300 tracking-wider">
-            BITS: {bankedBits}
-          </span>
-        </div>
+        {/* ============================================================ */}
+        {/* CENTER COLUMN: Arena (Logo -> Timer -> Large Board -> Caption) */}
+        {/* ============================================================ */}
+        <div className="flex flex-col items-center shrink-0">
+          {/* Byte Battle Logo */}
+          <div
+            className="relative mb-0.5 sm:mb-1 select-none flex justify-center"
+            style={{ width: 'clamp(220px, 22vw, 440px)' }}
+          >
+            <Image
+              src={`${IMAGEKIT_URL}/territory_img/byte_battle_logo.png`}
+              alt="Byte Battle - Territory Protocol"
+              width={400}
+              height={200}
+              className="w-full h-auto object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)] pointer-events-none"
+              priority
+            />
+          </div>
 
-        {/* Player 2 Stats + AI ACTIVE / PAUSED / GAME OVER Indicator */}
-        <div className="flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-zinc-900/80 border border-rose-500/30 backdrop-blur-md">
-          <div className="flex flex-col items-end leading-tight">
-            <div className="flex items-center gap-1.5">
+          {/* Match Timer HUD using timer_layout.png (Nestled directly above the Board) */}
+          <div
+            className="relative aspect-3974/1056 select-none shrink-0 drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)] flex items-center justify-center -mb-2 sm:-mb-3 md:-mb-4 z-20"
+            style={{ width: 'clamp(240px, 21vw, 440px)' }}
+          >
+            <Image
+              src={`${IMAGEKIT_URL}/territory_img/timer_layout.png`}
+              alt="Match Timer Frame"
+              fill
+              className="w-full h-full object-contain pointer-events-none select-none"
+            />
+
+            {/* Top Plate Header */}
+            <div className="absolute top-[10%] inset-x-0 flex items-center justify-center pointer-events-none">
+              <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-black uppercase tracking-[0.2em] text-slate-800">
+                TIME LEFT
+              </span>
+            </div>
+
+            {/* Digital Timer Value */}
+            <div className="absolute top-[30%] bottom-[12%] inset-x-[20%] flex items-center justify-center pointer-events-none">
               <span
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold uppercase tracking-wider border ${
-                  isGameFinished
-                    ? 'bg-zinc-800 text-zinc-400 border-zinc-700'
-                    : isConflictActive
-                    ? 'bg-amber-950/80 text-amber-400 border-amber-500/40'
-                    : 'bg-rose-950/80 text-rose-400 border-rose-500/30'
+                className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl 2xl:text-5xl font-mono font-black tracking-widest ${
+                  isCriticalTime
+                    ? 'text-rose-400 animate-pulse drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]'
+                    : isLowTime
+                    ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]'
+                    : 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]'
                 }`}
               >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isGameFinished
-                      ? 'bg-zinc-500'
-                      : isConflictActive
-                      ? 'bg-amber-400'
-                      : 'bg-rose-400 animate-pulse'
-                  }`}
-                />
-                {isGameFinished
-                  ? 'FINISHED'
-                  : isConflictActive
-                  ? 'AI PAUSED'
-                  : 'AI ACTIVE'}
-              </span>
-              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-rose-400">
-                Player 2
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              {player2Count !== connectedP2CellIds.size && (
-                <span className="text-[9px] font-mono font-bold text-rose-400/80">
-                  ({connectedP2CellIds.size} active)
-                </span>
-              )}
-              <span className="text-xs sm:text-sm font-extrabold text-zinc-100">
-                {player2Count} Cells
+                {formatMatchTime(remainingSeconds)}
               </span>
             </div>
           </div>
-          <div className="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.8)]" />
-        </div>
-      </div>
 
-      {/* Answer Questions CTA Button above the territory grid */}
-      <div className="w-full max-w-[min(92vw,560px)] flex justify-center mb-3 sm:mb-4">
-        <button
-          type="button"
-          disabled={isConflictActive || isGameFinished}
-          onClick={() => setIsQuestionModalOpen(true)}
-          className={`group relative flex items-center justify-center gap-2 sm:gap-2.5 w-full py-2.5 sm:py-3 px-6 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 ${
-            isConflictActive || isGameFinished
-              ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
-              : 'bg-linear-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:via-yellow-300 hover:to-amber-400 active:scale-[0.98] text-zinc-950 shadow-[0_0_25px_rgba(250,204,21,0.35)] hover:shadow-[0_0_35px_rgba(250,204,21,0.6)] cursor-pointer'
-          }`}
+          {/* Center 7x7 Territory Grid inside Frame Bezel */}
+          <div
+            className="relative aspect-square flex items-center justify-center select-none"
+            style={{
+              width: 'clamp(420px, min(80vw, 63vh), 1020px)',
+              height: 'clamp(420px, min(80vw, 63vh), 1020px)',
+            }}
+          >
+            {/* Frame Image Overlay from /territory_img/grid_layout.png */}
+            <Image
+              src={`${IMAGEKIT_URL}/territory_img/grid_layout.png`}
+              alt="Grid Frame Bezel"
+              fill
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none drop-shadow-[0_15px_40px_rgba(0,0,0,0.85)]"
+              priority
+            />
+
+            {/* Inner Grid Area (fitted precisely within transparent window of grid_layout.png: 20.6% inset has 0% frame overlap in all 4 corners) */}
+            <div className="absolute left-[20.6%] right-[20.6%] top-[20.5%] bottom-[20.5%] z-10 flex flex-col p-1.5 sm:p-2 md:p-2.5 bg-[#171f2f]/95 rounded-xl sm:rounded-2xl border border-white/10 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)] backdrop-blur-xs">
+              {/* Column Coordinate Labels (0..6) - Horizontally synchronized with the 7 columns */}
+              <div className="flex w-full mb-1 sm:mb-1.5 shrink-0">
+                {/* Spacer exactly matching row coordinate column width + right margin */}
+                <div className="w-3.5 sm:w-4.5 md:w-5.5 lg:w-6.5 shrink-0 mr-1 sm:mr-1.5" />
+
+                {/* 7 Column Labels sharing identical grid tracks and gap as cell grid */}
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 flex-1 items-center">
+                  {Array.from({ length: BOARD_SIZE }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="text-center font-mono text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] select-none"
+                    >
+                      {i}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Main Grid Area: Left Row Labels + 7x7 Cells Grid */}
+              <div className="flex flex-1 w-full min-h-0">
+                {/* Row Coordinate Labels (0..6) - Vertically synchronized with the 7 rows */}
+                <div className="grid grid-rows-7 gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 w-3.5 sm:w-4.5 md:w-5.5 lg:w-6.5 shrink-0 mr-1 sm:mr-1.5 items-center">
+                  {Array.from({ length: BOARD_SIZE }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="flex items-center justify-center font-mono text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] select-none"
+                    >
+                      {i}
+                    </span>
+                  ))}
+                </div>
+
+                {/* 7x7 Territory Grid of Cells */}
+                <div className="grid grid-cols-7 grid-rows-7 gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 flex-1 h-full w-full">
+                  {board.map((cell) => {
+                    const isInteractable = interactableCellIds.has(cell.id);
+                    const isChallengeable = challengeableEnemyCellIds.has(cell.id);
+                    const isSelected = selectedCellId === cell.id;
+                    const isRecentlyCaptured = lastAICapturedId === cell.id;
+                    const isContested = conflictState.cell?.id === cell.id;
+
+                    const isConnected =
+                      cell.owner === 'player1'
+                        ? connectedP1CellIds.has(cell.id)
+                        : cell.owner === 'player2'
+                        ? connectedP2CellIds.has(cell.id)
+                        : true;
+
+                    const isBase =
+                      (cell.row === P1_BASE.row && cell.col === P1_BASE.col) ||
+                      (cell.row === P2_BASE.row && cell.col === P2_BASE.col);
+
+                    return (
+                      <Cell
+                        key={cell.id}
+                        cell={cell}
+                        isInteractable={isInteractable}
+                        isChallengeable={isChallengeable}
+                        isSelected={isSelected}
+                        isRecentlyCaptured={isRecentlyCaptured}
+                        isContested={isContested}
+                        isConnected={isConnected}
+                        isBase={isBase}
+                        onClick={handleCellClick}
+                      >
+                        {/* Popovers anchored to selected cell */}
+                        {isSelected && selectedCell && !isGameFinished && (
+                          <>
+                            {selectedCell.owner === null && (
+                              <CapturePopover
+                                row={selectedCell.row}
+                                col={selectedCell.col}
+                                bankedBits={bankedBits}
+                                cost={CELL_CAPTURE_COST}
+                                onCapture={handleCaptureEmpty}
+                                onCancel={handleCancelPopover}
+                              />
+                            )}
+
+                            {selectedCell.owner === 'player2' && (
+                              <ChallengePopover
+                                row={selectedCell.row}
+                                col={selectedCell.col}
+                                bankedBits={bankedBits}
+                                cost={PLAYER_CHALLENGE_COST}
+                                onChallenge={handleChallengeEnemy}
+                                onClose={handleCancelPopover}
+                              />
+                            )}
+                          </>
+                        )}
+                      </Cell>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================ */}
+        {/* RIGHT COLUMN: Enemy (AI)                                     */}
+        {/* Boss Avatar + Point Card                                     */}
+        {/* ============================================================ */}
+        <div
+          className="flex flex-col 2xl:translate-y-20 2xl:-translate-x-20 items-center xl:items-start shrink-0"
+          style={{ width: 'clamp(270px, 23vw, 460px)' }}
         >
-          <FiZap className="size-4 shrink-0 transition-transform group-hover:scale-125 text-zinc-950" />
-          <span>Answer Questions</span>
-        </button>
-      </div>
+          {/* Boss Bust & Graffiti Tag */}
+          <div className="flex items-end gap-1.5 sm:gap-2 relative -mb-4 sm:-mb-6 md:-mb-8 xl:-mb-10 z-10 w-full justify-center xl:justify-start">
+            {/* Stylized Graffiti Text */}
+            <div className="mb-2 sm:mb-3 md:mb-4 select-none">
+              <span className="font-black italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-6xl text-rose-500 tracking-tighter drop-shadow-[0_3px_6px_rgba(0,0,0,0.9),0_0_15px_rgba(244,63,94,0.8)] rotate-6 block font-sans">
+                BOSS
+              </span>
+            </div>
 
-      {/* 8x8 Territory Game Board */}
-      <div
-        className="relative w-full max-w-[min(92vw,560px)] aspect-square p-2 sm:p-3 rounded-2xl sm:rounded-3xl bg-zinc-950/80 border border-zinc-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(20,20,35,0.4)] backdrop-blur-xl"
-        role="grid"
-        aria-label="8x8 Territory Grid"
-      >
-        <div className="grid grid-cols-8 gap-1 sm:gap-1.5 w-full h-full">
-          {board.map((cell) => {
-            const isInteractable = interactableCellIds.has(cell.id);
-            const isChallengeable = challengeableEnemyCellIds.has(cell.id);
-            const isSelected = selectedCellId === cell.id;
-            const isRecentlyCaptured = lastAICapturedId === cell.id;
-            const isContested = conflictState.cell?.id === cell.id;
+            {/* Boss Bust Image */}
+            <div
+              className="relative shrink-0 overflow-visible"
+              style={{
+                width: 'clamp(130px, 12vw, 240px)',
+                height: 'clamp(130px, 12vw, 240px)',
+              }}
+            >
+              <div className="absolute inset-0 rounded-full bg-rose-500/25 blur-2xl pointer-events-none scale-125" />
+              <Image
+                src={`${IMAGEKIT_URL}/territory_img/boss.png`}
+                alt="Boss"
+                fill
+                className="w-full h-full object-contain object-bottom drop-shadow-[0_0_20px_rgba(244,63,94,0.7)] pointer-events-none scale-110 origin-bottom"
+              />
+            </div>
+          </div>
 
-            // Connectivity back to player's base node
-            const isConnected =
-              cell.owner === 'player1'
-                ? connectedP1CellIds.has(cell.id)
-                : cell.owner === 'player2'
-                ? connectedP2CellIds.has(cell.id)
-                : true;
+          {/* Enemy Point Card Frame using enemy_point_card.png */}
+          <div className="relative w-full 2xl:w-150 aspect-3360/1274 select-none shrink-0 drop-shadow-[0_10px_25px_rgba(0,0,0,0.6)]">
+            <Image
+              src={`${IMAGEKIT_URL}/territory_img/enemy_point_card.png`}
+              alt="Enemy HUD Card Frame"
+              fill
+              className="w-full h-full object-contain pointer-events-none select-none"
+            />
 
-            const isBase =
-              (cell.row === P1_BASE.row && cell.col === P1_BASE.col) ||
-              (cell.row === P2_BASE.row && cell.col === P2_BASE.col);
+            {/* Top Tab Overlay */}
+            <div className="absolute top-[6%] left-[16%] right-[16%] flex items-center justify-center pointer-events-none">
+              <span className="font-black text-[10px] sm:text-xs md:text-sm lg:text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                ENEMY (AI)
+              </span>
+            </div>
 
-            return (
-              <Cell
-                key={cell.id}
-                cell={cell}
-                isInteractable={isInteractable}
-                isChallengeable={isChallengeable}
-                isSelected={isSelected}
-                isRecentlyCaptured={isRecentlyCaptured}
-                isContested={isContested}
-                isConnected={isConnected}
-                isBase={isBase}
-                onClick={handleCellClick}
-              >
-                {/* Popovers anchored to selected cell */}
-                {isSelected && selectedCell && !isGameFinished && (
-                  <>
-                    {/* Empty cell capture popover */}
-                    {selectedCell.owner === null && (
-                      <CapturePopover
-                        row={selectedCell.row}
-                        col={selectedCell.col}
-                        bankedBits={bankedBits}
-                        cost={CELL_CAPTURE_COST}
-                        onCapture={handleCaptureEmpty}
-                        onCancel={handleCancelPopover}
-                      />
-                    )}
+            {/* Dynamic Cells Count */}
+            <div className="absolute top-[34%] left-[28%] right-[25%] flex items-center pointer-events-none">
+              <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
+                {player2Count} Cells
+              </span>
+              {player2Count !== connectedP2CellIds.size && (
+                <span className="ml-1 text-[9px] sm:text-[10px] md:text-xs font-mono font-bold text-rose-600">
+                  ({connectedP2CellIds.size} act)
+                </span>
+              )}
+            </div>
 
-                    {/* Adjacent enemy cell challenge popover */}
-                    {selectedCell.owner === 'player2' && (
-                      <ChallengePopover
-                        row={selectedCell.row}
-                        col={selectedCell.col}
-                        bankedBits={bankedBits}
-                        cost={PLAYER_CHALLENGE_COST}
-                        onChallenge={handleChallengeEnemy}
-                        onClose={handleCancelPopover}
-                      />
-                    )}
-                  </>
-                )}
-              </Cell>
-            );
-          })}
+            {/* Dynamic Bits Count */}
+            <div className="absolute top-[60%] left-[28%] right-[25%] flex items-center pointer-events-none">
+              <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
+                Bits: 0
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Helper Caption */}
-      <div className="mt-3.5 text-center">
-        <p className="text-[11px] sm:text-xs text-zinc-500 tracking-wide">
-          Green = You | Red = Opponent | Bases: (0,0) & (7,7) | Seizing opponent base wins immediately!
-        </p>
       </div>
 
       {/* Regular Bit-Earning Question Modal */}
