@@ -139,7 +139,7 @@ export const Cell: React.FC<CellProps> = ({
             src={`${IMAGEKIT_URL}/territory_img/base_tower.png`}
             alt="Base HQ"
             fill
-            className="w-full h-full max-w-[65%] max-h-[65%] object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.95)]"
+            className="w-full h-full max-w-[95%] max-h-[95%] object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.95)]"
           />
         </div>
       ) : owner === null ? (

@@ -66,7 +66,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
     },
 };
 
-export const GROUND_IMAGE_URL = `${IMAGEKIT_URL}/selec_char/ground.png`;
+export const GROUND_IMAGE_URL = `${IMAGEKIT_URL}/img/char_selec_bg.png`;
 
 export function getCharacterTheme(id: string): CharacterTheme {
     return CHARACTER_THEMES[id] ?? CHARACTER_THEMES['aurelia'];
