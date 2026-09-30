@@ -104,7 +104,7 @@ export const ChallengePopover: React.FC<ChallengePopoverProps> = ({
           onClick={onChallenge}
           className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all uppercase tracking-wider ${
             canAfford
-              ? 'bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.45)] hover:shadow-[0_0_16px_rgba(244,63,94,0.65)] active:scale-95 cursor-pointer'
+              ? 'bg-linear-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.45)] hover:shadow-[0_0_16px_rgba(244,63,94,0.65)] active:scale-95 cursor-pointer'
               : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700/50'
           }`}
         >

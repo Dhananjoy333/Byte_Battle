@@ -1,6 +1,6 @@
 import { Cell, CellOwner } from './types';
 
-export const BOARD_SIZE = 8;
+export const BOARD_SIZE = 7;
 export const GRID_SIZE = BOARD_SIZE;
 
 export interface BaseLocation {
@@ -11,7 +11,7 @@ export interface BaseLocation {
 /**
  * Permanent base coordinates.
  * P1 Base = top-left (0,0)
- * P2 Base = bottom-right (GRID_SIZE-1, GRID_SIZE-1) -> (7,7) for 8x8
+ * P2 Base = bottom-right (GRID_SIZE-1, GRID_SIZE-1) -> (6,6) for 7x7
  */
 export const P1_BASE: BaseLocation = { row: 0, col: 0 };
 export const P2_BASE: BaseLocation = { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 };
@@ -28,8 +28,8 @@ export function getBaseLocation(
 /**
  * Centralized Game & AI Configuration Constants
  */
-export const MATCH_DURATION = 120; // 2 minutes (120 seconds)
-export const AI_CAPTURE_INTERVAL = 5000;
+export const MATCH_DURATION = 120000; // 2 minutes (120 seconds)
+export const AI_CAPTURE_INTERVAL = 5000000;
 export const AI_ACCEPT_CHALLENGE_PROBABILITY = 0.5;
 export const AI_CORRECT_ANSWER_PROBABILITY = 0.3;
 export const DUEL_DURATION = 10_000; // in milliseconds (10 seconds)
@@ -38,10 +38,10 @@ export const AI_REJECTION_REFUND = 1;
 export const AI_CHALLENGE_PROBABILITY = 0.35; // Probability that AI challenges an adjacent P1 cell on its tick
 
 /**
- * Initializes an 8x8 territory grid:
- * - 64 cells total (rows 0..7, cols 0..7)
+ * Initializes a 7x7 territory grid:
+ * - 49 cells total (rows 0..6, cols 0..6)
  * - (0,0) belongs to player1 (P1 Base)
- * - (7,7) belongs to player2 (P2 Base)
+ * - (6,6) belongs to player2 (P2 Base)
  * - All other cells have owner: null
  */
 export function createInitialBoard(size: number = BOARD_SIZE): Cell[] {
