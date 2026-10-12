@@ -1,4 +1,3 @@
-
 import ModeSelection from "@/app/_components/mode_selec/ModeSelection"
 
 const MyComponent = () => {

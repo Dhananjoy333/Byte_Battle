@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { MATCH_DURATION } from './territoryLogic';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { MATCH_DURATION } from "./territoryLogic";
 
 interface UseMatchTimerOptions {
   duration?: number;
@@ -16,7 +16,10 @@ export function useMatchTimer({
 }: UseMatchTimerOptions) {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(duration);
   const onTimeExpiredRef = useRef(onTimeExpired);
-  onTimeExpiredRef.current = onTimeExpired;
+
+  useEffect(() => {
+    onTimeExpiredRef.current = onTimeExpired;
+  }, [onTimeExpired]);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -28,7 +31,7 @@ export function useMatchTimer({
       }
       setRemainingSeconds(newDuration);
     },
-    [duration]
+    [duration],
   );
 
   useEffect(() => {

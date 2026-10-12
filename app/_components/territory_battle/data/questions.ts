@@ -11,7 +11,7 @@ export interface TerritoryQuestion {
   codeSnippet?: string;
   options: QuestionOption[];
   correctAnswer: 'A' | 'B' | 'C' | 'D';
-  reward: number; // in Bits
+  reward?: number; // in Bits (calculated progressively per session streak)
   explanation?: string;
 }
 
@@ -28,7 +28,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: '"object"' },
     ],
     correctAnswer: 'B',
-    reward: 2,
     explanation: 'In JavaScript, NaN (Not-a-Number) is officially of type "number" per IEEE 754 floating point standard.',
   },
   {
@@ -43,7 +42,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'Call Stack immediately' },
     ],
     correctAnswer: 'A',
-    reward: 2,
     explanation: 'Promises and mutation observers use the Microtask queue, which has higher priority than macrotasks (like setTimeout).',
   },
   {
@@ -57,7 +55,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'O(n²)' },
     ],
     correctAnswer: 'C',
-    reward: 2,
     explanation: 'Hash tables offer constant time O(1) average lookup through direct hashing of keys.',
   },
   {
@@ -72,7 +69,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'Returns undefined' },
     ],
     correctAnswer: 'C',
-    reward: 2,
     explanation: 'const binds the variable reference, not the inner contents of an object.',
   },
   {
@@ -87,7 +83,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'NaN' },
     ],
     correctAnswer: 'B',
-    reward: 2,
     explanation: 'Initial accumulator is 10, plus (1 + 2 + 3 + 4 = 10), resulting in 20.',
   },
   {
@@ -101,7 +96,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'A syntax construct to close unhandled event listeners' },
     ],
     correctAnswer: 'A',
-    reward: 2,
     explanation: 'A closure gives an inner function access to an outer function’s scope even after the outer function has returned.',
   },
   {
@@ -115,7 +109,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'Cookie with expires=0' },
     ],
     correctAnswer: 'B',
-    reward: 2,
     explanation: 'localStorage persists until explicitly removed by the user or an application script.',
   },
   {
@@ -130,7 +123,6 @@ export const TERRITORY_QUESTIONS: TerritoryQuestion[] = [
       { key: 'D', label: 'D', text: 'Readonly<T>' },
     ],
     correctAnswer: 'C',
-    reward: 2,
     explanation: 'Partial<T> marks all properties of type T as optional with ? modifier.',
   },
 ];

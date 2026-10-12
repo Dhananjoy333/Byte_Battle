@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import Image from 'next/image';
 import { Cell, CellOwner } from './types';
 import { TerritoryQuestion, QuestionOption } from './data/questions';
-import { FiClock, FiCheck, FiX, FiShield, FiZap, FiAward, FiAlertTriangle } from 'react-icons/fi';
+import { FiClock, FiCheck, FiX, FiAward, FiAlertTriangle, FiZap } from 'react-icons/fi';
 
 interface CellDuelModalProps {
   isOpen: boolean;
@@ -21,11 +22,147 @@ interface CellDuelModalProps {
   onFinishDuel: () => void;
 }
 
+// Chamfered polygon for answer options (outer border)
+const OPTION_OUTER_CLIP =
+  'polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px)';
+
+// Chamfered polygon for answer options (inner content)
+const OPTION_INNER_CLIP =
+  'polygon(8.5px 0, calc(100% - 8.5px) 0, 100% 8.5px, 100% calc(100% - 8.5px), calc(100% - 8.5px) 100%, 8.5px 100%, 0 calc(100% - 8.5px), 0 8.5px)';
+
+// Chamfered polygon for option badge [A, B, C, D]
+const BADGE_CLIP =
+  'polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)';
+
+// Chamfer polygon for action button
+const ACTION_BTN_CLIP =
+  'polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)';
+
+/**
+ * Tokenizes and highlights prompt text: keywords or terms like `typeof NaN`,
+ * `Promise`, `const`, `reduce`, `Map`, etc. are styled in bright arcade gold/yellow.
+ */
+function renderHighlightedPrompt(prompt: string): React.ReactNode {
+  if (prompt.includes('`')) {
+    const parts = prompt.split(/(`[^`]+`)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <span key={i} className="text-yellow-400 font-mono font-bold tracking-tight">
+            {part.slice(1, -1)}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+
+  const highlightRegex =
+    /(typeof NaN|typeof\s+\w+|Promise\.resolve|Hash Table|Map|const|reduce|closure|sessionStorage|localStorage|Partial<T>|TypeError|O\(1\)|O\(n\)|O\(log n\)|O\(n²\))/g;
+
+  const segments = prompt.split(highlightRegex);
+  return segments.map((seg, i) => {
+    if (seg.match(highlightRegex)) {
+      return (
+        <span key={i} className="text-yellow-400 font-mono font-bold tracking-tight">
+          {seg}
+        </span>
+      );
+    }
+    return <span key={i}>{seg}</span>;
+  });
+}
+
+/**
+ * Syntax highlighter for code snippet lines
+ */
+function renderSyntaxHighlightedCode(code: string): React.ReactNode {
+  const lines = code.split('\n');
+
+  return lines.map((line, lineIdx) => {
+    const tokenRegex =
+      /(\/\/.*$)|(".*?"|'.*?'|`.*?`)|(\b(?:const|let|var|typeof|type|function|return|new|if|else|import|from|export)\b)|(\b(?:console|Promise|Partial|User|Map|Set|Math|Number|String|Array|Object)\b)|(\b(?:log|resolve|then|catch|reduce|map|filter|forEach|bind)\b)|(\b\d+\b)|([a-zA-Z_$][a-zA-Z0-9_$]*)|([^\s\w]+|\s+)/g;
+
+    const tokens: React.ReactNode[] = [];
+    let match: RegExpExecArray | null;
+    let keyIdx = 0;
+
+    while ((match = tokenRegex.exec(line)) !== null) {
+      const [
+        token,
+        comment,
+        stringLit,
+        keyword,
+        builtin,
+        method,
+        numberLit,
+        identifier,
+        other,
+      ] = match;
+
+      if (comment) {
+        tokens.push(
+          <span key={keyIdx++} className="text-zinc-500 italic">
+            {token}
+          </span>
+        );
+      } else if (stringLit) {
+        tokens.push(
+          <span key={keyIdx++} className="text-emerald-300 font-medium">
+            {token}
+          </span>
+        );
+      } else if (keyword) {
+        tokens.push(
+          <span key={keyIdx++} className="text-yellow-400 font-bold">
+            {token}
+          </span>
+        );
+      } else if (builtin) {
+        tokens.push(
+          <span key={keyIdx++} className="text-cyan-300 font-semibold">
+            {token}
+          </span>
+        );
+      } else if (method) {
+        tokens.push(
+          <span key={keyIdx++} className="text-sky-300">
+            {token}
+          </span>
+        );
+      } else if (numberLit) {
+        tokens.push(
+          <span key={keyIdx++} className="text-amber-300">
+            {token}
+          </span>
+        );
+      } else if (identifier) {
+        tokens.push(
+          <span key={keyIdx++} className="text-blue-100">
+            {token}
+          </span>
+        );
+      } else {
+        tokens.push(
+          <span key={keyIdx++} className="text-zinc-300">
+            {other || token}
+          </span>
+        );
+      }
+    }
+
+    return (
+      <div key={lineIdx} className="leading-relaxed">
+        {tokens}
+      </div>
+    );
+  });
+}
+
 export const CellDuelModal: React.FC<CellDuelModalProps> = ({
   isOpen,
   cell,
   attacker,
-  defender,
   question,
   timeLeft,
   aiStatus,
@@ -36,6 +173,20 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
   onSelectOption,
   onFinishDuel,
 }) => {
+  // Handle keyboard escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onFinishDuel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onFinishDuel]);
+
   if (!isOpen || !question || !cell) {
     return null;
   }
@@ -47,206 +198,293 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
   const formattedTime = `00:${timeLeft.toString().padStart(2, '0')}`;
   const isTimeCritical = timeLeft <= 3 && !isResolved;
 
+  // Parse Category into Category + Subcategory if delimited by '//'
+  const categoryParts = question.category.split('//').map((p) => p.trim());
+  const mainCategory = categoryParts[0] || question.category;
+  const subCategory = categoryParts[1] || '';
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-lg animate-in fade-in duration-200 select-none overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none overflow-y-auto"
       role="dialog"
       aria-modal="true"
-      aria-label="Cell Duel Combat"
+      aria-label="Contest Match Cell Duel"
     >
-      <div className="relative w-full max-w-2xl bg-zinc-950/95 border border-yellow-500/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(250,204,21,0.15)] flex flex-col gap-4.5 my-auto">
-        {/* ============================================================== */}
-        {/* Top Header: Cyber Duel Title, Contested Cell & Countdown       */}
-        {/* ============================================================== */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-              <span className="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.3em] text-yellow-400">
-                Territory Battle // Cell Duel
+      {/* ============================================================== */}
+      {/* Main Composition Container                                    */}
+      {/* Outer frame: 1202 x 908 (aspect ratio ~ 1.324)                */}
+      {/* Scales proportionally, preserves visual integrity              */}
+      {/* ============================================================== */}
+      <div className="relative w-[min(96vw,840px)] 2xl:w-[min(94vw,980px)] aspect-1202/908 max-h-[96vh] flex items-center justify-center my-auto shrink-0 select-none">
+        {/* ============================================================ */}
+        {/* LAYER 0: Outer Frame (contest_match_frame.png)               */}
+        {/* Contains the metallic frame, crown, CONTEST MATCH title      */}
+        {/* ============================================================ */}
+        <Image
+          src="/territory_img/contest_match_frame.png"
+          alt="Contest Match Frame"
+          fill
+          priority
+          sizes="(max-width: 1536px) 840px, 980px"
+          className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none z-0"
+        />
+        {/* ============================================================ */}
+        {/* LAYER 1: Dynamic Text Below "CONTEST MATCH"                  */}
+        {/* Sits precisely inside the dark slot with red glowing line    */}
+        {/* ============================================================ */}
+        <div className="absolute z-10 top-[27.9%] inset-x-[15%] h-[4.5%] flex items-center justify-center pointer-events-none">
+          <span className="font-mono font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[8.5px] min-[420px]:text-[10px] sm:text-xs md:text-sm text-zinc-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
+            CONTESTING FOR THE CELL ({cell.row}, {cell.col})
+          </span>
+        </div>
+
+        {/* ============================================================ */}
+        {/* LAYER 2: VS Banner (vs_banner.png) + Player Info              */}
+        {/* Sits directly below the contest description text             */}
+        {/* ============================================================ */}
+        <div className="absolute z-15 top-[33.2%] left-[10.5%] right-[10.5%] w-[79%] h-[9.8%]">
+          {/* Banner Graphic Asset */}
+          <Image
+            src="/territory_img/vs_banner.png"
+            alt="Versus Banner"
+            fill
+            priority
+            sizes="(max-width: 1536px) 680px, 800px"
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
+          />
+
+          {/* Player 1 (Blue Side - Left) */}
+          <div className="absolute inset-y-0 left-0 w-[42%] flex items-center gap-1.5 sm:gap-2.5 px-3 sm:px-4 md:px-5">
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.9)] shrink-0" />
+            <div className="flex flex-col min-w-0 leading-tight">
+              <span className="font-sans translate-y-2 font-black uppercase tracking-wider text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm text-cyan-300 drop-shadow-[0_0_6px_rgba(6,182,212,0.8)] truncate">
+                PLAYER 1 (YOU)
+              </span>
+              <span className="text-[7.5px] min-[420px]:text-[8.5px] sm:text-[10px] md:text-xs text-blue-200/90 font-medium truncate">
+                {playerAnswer ? `Answered [${playerAnswer}]` : 'First to solve wins!'}
               </span>
             </div>
-            <h2 className="text-base sm:text-xl font-black uppercase tracking-wider text-zinc-100 mt-0.5">
-              Contested: Cell ({cell.row}, {cell.col})
-            </h2>
-            <span className="text-[11px] text-zinc-400">
-              {isP1Attacker
-                ? 'You are attacking Player 2 territory'
-                : 'You are defending against Player 2 challenge'}
-            </span>
           </div>
 
-          {/* Large Countdown Timer */}
-          <div
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl border transition-all ${
-              isTimeCritical
-                ? 'bg-rose-950/80 border-rose-500 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.6)] animate-pulse'
-                : 'bg-zinc-900/90 border-zinc-700/80 text-yellow-300 shadow-[0_0_15px_rgba(250,204,21,0.2)]'
-            }`}
-          >
-            <FiClock className="size-4 sm:size-5 shrink-0" />
-            <span className="text-xl sm:text-2xl font-black font-mono tracking-tight">
-              {formattedTime}
-            </span>
+          {/* Player 2 (Red Side - Right) */}
+          <div className="absolute inset-y-0 right-0 w-[42%] flex items-center justify-end gap-1.5 sm:gap-2.5 px-3 sm:px-4 md:px-5">
+            <div className="flex flex-col items-end min-w-0 leading-tight">
+              <span className="font-sans font-black uppercase tracking-wider text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm text-rose-400 drop-shadow-[0_0_6px_rgba(244,63,94,0.8)] truncate">
+                PLAYER 2 (AI)
+              </span>
+              <div className="flex items-center gap-1 text-[7.5px] min-[420px]:text-[8.5px] sm:text-[10px] md:text-xs font-semibold truncate">
+                {aiStatus === 'thinking' && (
+                  <span className="inline-flex items-center gap-0.5 text-amber-300 font-mono">
+                    <FiZap className="size-2.5 sm:size-3 animate-spin" />
+                    THINKING...
+                  </span>
+                )}
+                {aiStatus === 'wrong' && (
+                  <span className="inline-flex items-center gap-0.5 text-rose-400 font-mono font-bold">
+                    <FiX className="size-2.5 sm:size-3 stroke-3" />
+                    WRONG ANSWER
+                  </span>
+                )}
+                {aiStatus === 'correct' && (
+                  <span className="inline-flex items-center gap-0.5 text-emerald-400 font-mono font-bold">
+                    <FiCheck className="size-2.5 sm:size-3 stroke-3" />
+                    CORRECT!
+                  </span>
+                )}
+              </div>
+            </div>
+            <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] shrink-0" />
           </div>
         </div>
 
-        {/* ============================================================== */}
-        {/* Versus Matchup Bar (Player 1 vs Player 2)                      */}
-        {/* ============================================================== */}
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-zinc-900/70 border border-zinc-800">
-          {/* Player 1 Card */}
-          <div className="flex flex-col items-start gap-1 p-2.5 rounded-xl bg-zinc-950/60 border border-emerald-500/30">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400">
-                Player 1 (You)
-              </span>
-            </div>
-            <span className="text-[11px] sm:text-xs font-semibold text-zinc-300">
-              {playerAnswer
-                ? `Answered [${playerAnswer}]`
-                : 'First to solve wins!'}
-            </span>
-          </div>
-
-          {/* Player 2 Card (AI) */}
-          <div className="flex flex-col items-end gap-1 p-2.5 rounded-xl bg-zinc-950/60 border border-rose-500/30">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-rose-400">
-                Player 2 (AI)
-              </span>
-              <span className="w-2 h-2 rounded-full bg-rose-400" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              {aiStatus === 'thinking' && (
-                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-mono font-bold text-amber-400">
-                  <FiZap className="size-3 animate-spin" />
-                  THINKING...
-                </span>
-              )}
-              {aiStatus === 'wrong' && (
-                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-mono font-bold text-rose-400">
-                  <FiX className="size-3" />
-                  WRONG ANSWER
-                </span>
-              )}
-              {aiStatus === 'correct' && (
-                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-mono font-bold text-emerald-400">
-                  <FiCheck className="size-3" />
-                  CORRECT!
-                </span>
-              )}
-            </div>
-          </div>
+        {/* ============================================================ */}
+        {/* LAYER 3: Question Frame Asset (contest_question_layout.png)  */}
+        {/* Sits directly below VS banner, frames the question & options */}
+        {/* ============================================================ */}
+        <div className="absolute z-20 top-[43.8%] left-[10.5%] right-[10.5%] w-[79%] h-[40.2%] pointer-events-none select-none">
+          <Image
+            src="/territory_img/contest_question_layout.png"
+            alt="Contest Question Frame"
+            fill
+            priority
+            sizes="(max-width: 1536px) 680px, 800px"
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
+          />
         </div>
 
-        {/* ============================================================== */}
-        {/* The Programming Duel Question                                  */}
-        {/* ============================================================== */}
-        <div className="flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider bg-zinc-800 text-yellow-300 border border-yellow-400/30">
-              {question.category}
-            </span>
-            <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold">
-              First correct answer claims territory
-            </span>
+        {/* ============================================================ */}
+        {/* LAYER 4: Dynamic Question HTML Content & Answer Options      */}
+        {/* Positioned inside contest_question_layout                    */}
+        {/* ============================================================ */}
+        <div className="absolute z-30 top-[43.8%] left-[10.5%] right-[10.5%] w-[79%] h-[40.2%] p-2 sm:p-3 md:p-3.5 flex flex-col justify-between overflow-hidden">
+          {/* Top chamfer tabs: Category (left) & Timer (right) */}
+          <div className="relative w-[90%] left-12 bottom-2 h-[18%] flex items-center justify-between shrink-0 pointer-events-none">
+            {/* Category Tab (Top-Left cutout) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 text-[8.5px] min-[420px]:text-[9.5px] sm:text-[11px] md:text-xs font-mono font-black uppercase tracking-wider text-yellow-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+              <span>{mainCategory}</span>
+              {subCategory && (
+                <>
+                  <span className="text-yellow-500 font-sans font-black">{'//'}</span>
+                  <span className="text-zinc-200">{subCategory}</span>
+                </>
+              )}
+            </div>
+
+            {/* Countdown Timer Tab (Top-Right cutout) */}
+            <div
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 font-mono font-black text-[11px] sm:text-xs md:text-sm tracking-wider transition-colors ${
+                isTimeCritical
+                  ? 'text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.8)] animate-pulse'
+                  : 'text-amber-300 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]'
+              }`}
+            >
+              <FiClock className="size-3 sm:size-3.5 stroke-[2.5] shrink-0" />
+              <span>{formattedTime}</span>
+            </div>
           </div>
 
-          <h3 className="text-sm sm:text-base font-bold text-zinc-100 leading-snug">
-            {question.prompt}
-          </h3>
+          {/* Question Prompt & Code Snippet */}
+          <div className="flex-1 min-h-0 flex flex-col justify-center gap-1 sm:gap-1.5 px-1 sm:px-2 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <h3 className="text-[10px] min-[420px]:text-[11px] sm:text-xs md:text-[13px] font-bold text-zinc-100 leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {renderHighlightedPrompt(question.prompt)}
+            </h3>
 
-          {question.codeSnippet && (
-            <div className="relative rounded-xl bg-black/80 border border-zinc-800 p-3 font-mono text-xs text-cyan-300 overflow-x-auto shadow-inner">
-              <pre className="whitespace-pre-wrap font-mono">{question.codeSnippet}</pre>
-            </div>
-          )}
-        </div>
+            {question.codeSnippet && (
+              <div className="relative rounded-md bg-black/90 border border-red-500/30 px-2 sm:px-2.5 py-0.5 sm:py-1 font-mono text-[8.5px] min-[420px]:text-[9.5px] sm:text-[11px] md:text-xs text-zinc-100 overflow-x-auto shadow-inner">
+                <pre className="whitespace-pre font-mono leading-tight">
+                  {renderSyntaxHighlightedCode(question.codeSnippet)}
+                </pre>
+              </div>
+            )}
+          </div>
 
-        {/* ============================================================== */}
-        {/* Answer Options (A, B, C, D)                                   */}
-        {/* ============================================================== */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
-          {question.options.map((opt: QuestionOption) => {
-            const isSelected = playerAnswer === opt.key;
-            const isThisCorrect = opt.key === question.correctAnswer;
+          {/* Answer Options: 2x2 Grid with Angular Chamfered Polygons */}
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mt-1 sm:mt-1.5 shrink-0">
+            {question.options.map((opt: QuestionOption) => {
+              const isSelected = playerAnswer === opt.key;
+              const isThisCorrect = opt.key === question.correctAnswer;
 
-            let optionStyle =
-              'relative flex items-center gap-3 p-3 rounded-xl border text-left text-xs sm:text-sm font-medium transition-all duration-150 select-none';
+              let outerBg =
+                'bg-gradient-to-r from-red-500 via-amber-500 to-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)]';
+              let innerBg = 'bg-gradient-to-b from-[#240608] to-[#120204] text-zinc-100';
+              let badgeBorder = 'bg-red-500/80';
+              let badgeInner = 'bg-[#1e0507] text-amber-300';
+              let pixelColor = 'bg-red-500/70';
 
-            if (!isResolved) {
-              optionStyle +=
-                ' bg-zinc-900/85 hover:bg-zinc-800/90 border-zinc-800 hover:border-yellow-400/50 hover:text-yellow-200 text-zinc-200 cursor-pointer active:scale-[0.98] shadow-sm';
-            } else {
-              if (isThisCorrect) {
-                optionStyle +=
-                  ' bg-emerald-950/90 border-emerald-400 text-emerald-200 shadow-[0_0_15px_rgba(52,211,153,0.4)] font-semibold';
-              } else if (isSelected && !isThisCorrect) {
-                optionStyle +=
-                  ' bg-rose-950/90 border-rose-500 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.4)] font-semibold';
+              if (!isResolved) {
+                // Interactive / Idle state
+                outerBg =
+                  'bg-gradient-to-r from-red-600 via-amber-500 to-red-600 group-hover:from-amber-400 group-hover:via-yellow-400 group-hover:to-amber-400 shadow-[0_0_8px_rgba(239,68,68,0.3)] group-hover:shadow-[0_0_14px_rgba(250,204,21,0.6)]';
+                innerBg =
+                  'bg-gradient-to-b from-[#240608] to-[#120204] group-hover:from-[#350a0d] group-hover:to-[#1f0305] text-zinc-100 group-hover:text-yellow-200';
               } else {
-                optionStyle += ' bg-zinc-950/50 border-zinc-850 text-zinc-500 opacity-50 cursor-default';
+                // Resolved state
+                if (isThisCorrect) {
+                  outerBg =
+                    'bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 shadow-[0_0_16px_rgba(16,185,129,0.8)]';
+                  innerBg = 'bg-gradient-to-b from-[#063e26] to-[#022214] text-emerald-100 font-semibold';
+                  badgeBorder = 'bg-emerald-400';
+                  badgeInner = 'bg-emerald-500 text-zinc-950 font-black';
+                  pixelColor = 'bg-emerald-300';
+                } else if (isSelected && !isThisCorrect) {
+                  outerBg =
+                    'bg-gradient-to-r from-rose-500 via-red-500 to-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.8)]';
+                  innerBg = 'bg-gradient-to-b from-[#480d1b] to-[#24040c] text-rose-100 font-semibold';
+                  badgeBorder = 'bg-rose-400';
+                  badgeInner = 'bg-rose-500 text-white font-black';
+                  pixelColor = 'bg-rose-300';
+                } else {
+                  outerBg = 'bg-zinc-800/60 opacity-50';
+                  innerBg = 'bg-zinc-950/90 text-zinc-500 opacity-60';
+                  badgeBorder = 'bg-zinc-800';
+                  badgeInner = 'bg-zinc-900 text-zinc-600';
+                  pixelColor = 'bg-zinc-800';
+                }
               }
-            }
 
-            return (
-              <button
-                key={opt.key}
-                type="button"
-                disabled={isResolved}
-                onClick={() => onSelectOption(opt.key)}
-                className={optionStyle}
-              >
-                <span
-                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs sm:text-sm shrink-0 border ${
-                    !isResolved
-                      ? 'bg-zinc-800 border-zinc-700 text-zinc-300'
-                      : isThisCorrect
-                      ? 'bg-emerald-500 border-emerald-300 text-zinc-950 font-black'
-                      : isSelected
-                      ? 'bg-rose-500 border-rose-300 text-zinc-950 font-black'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-600'
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  disabled={isResolved}
+                  onClick={() => onSelectOption(opt.key)}
+                  className={`group relative  w-full h-8 sm:h-9 md:h-10 p-[1.5px] transition-all duration-150 select-none flex flex-col ${
+                    !isResolved ? 'cursor-pointer active:scale-[0.98]' : 'cursor-default'
                   }`}
+                  style={{
+                    clipPath: OPTION_OUTER_CLIP,
+                  }}
                 >
-                  {isResolved && isThisCorrect ? (
-                    <FiCheck className="size-3.5 sm:size-4 stroke-[3]" />
-                  ) : isResolved && isSelected ? (
-                    <FiX className="size-3.5 sm:size-4 stroke-[3]" />
-                  ) : (
-                    opt.key
-                  )}
-                </span>
-                <span className="flex-1 leading-snug">{opt.text}</span>
-              </button>
-            );
-          })}
-        </div>
+                  {/* Outer Chamfer Border */}
+                  <div className={`w-full h-full flex-1 flex flex-col ${outerBg} transition-colors duration-150`}>
+                    {/* Inner Chamfer Content */}
+                    <div
+                      className={`w-full h-full flex-1 ${innerBg} flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 relative transition-colors duration-150`}
+                      style={{
+                        clipPath: OPTION_INNER_CLIP,
+                      }}
+                    >
+                      {/* Pixel Corner Accents */}
+                      <div className="absolute top-0.5 left-2 flex gap-0.5 pointer-events-none">
+                        <span className={`w-0.5 h-0.5 ${pixelColor}`} />
+                        <span className={`w-0.5 h-0.5 ${pixelColor}`} />
+                      </div>
+                      <div className="absolute top-0.5 right-2 flex gap-0.5 pointer-events-none">
+                        <span className={`w-0.5 h-0.5 ${pixelColor}`} />
+                        <span className={`w-0.5 h-0.5 ${pixelColor}`} />
+                      </div>
 
-        {/* ============================================================== */}
-        {/* Duel Result Banner (Victory / Defeat)                           */}
-        {/* ============================================================== */}
-        {isResolved && (
-          <div
-            className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in zoom-in-95 duration-200 ${
-              isP1Winner
-                ? 'bg-emerald-950/80 border-emerald-500/60 shadow-[0_0_30px_rgba(16,185,129,0.35)]'
-                : 'bg-rose-950/80 border-rose-500/60 shadow-[0_0_30px_rgba(244,63,94,0.35)]'
-            }`}
-          >
-            <div className="flex items-center gap-3">
+                      {/* Chamfered Option Key Badge [A, B, C, D] */}
+                      <div
+                        className={`w-4 h-4 sm:w-5 sm:h-5 md:w-5.5 md:h-5.5 p-px shrink-0 self-center ${badgeBorder} flex items-center justify-center transition-colors duration-150`}
+                        style={{
+                          clipPath: BADGE_CLIP,
+                        }}
+                      >
+                        <div
+                          className={`w-full h-full ${badgeInner} flex items-center justify-center font-mono font-black text-[9px] sm:text-[10px] md:text-xs`}
+                          style={{
+                            clipPath: BADGE_CLIP,
+                          }}
+                        >
+                          {isResolved && isThisCorrect ? (
+                            <FiCheck className="size-2.5 sm:size-3 stroke-3" />
+                          ) : isResolved && isSelected && !isThisCorrect ? (
+                            <FiX className="size-2.5 sm:size-3 stroke-3" />
+                          ) : (
+                            opt.key
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Option Text */}
+                      <span className="flex-1 min-w-0 text-left text-[9.5px] min-[420px]:text-[10.5px] sm:text-xs md:text-[12.5px] font-semibold tracking-tight leading-tight truncate">
+                        {opt.text}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ========================================================== */}
+          {/* Duel Resolution Overlay (Victory / Defeat)                 */}
+          {/* ========================================================== */}
+          {isResolved && (
+            <div className="absolute inset-x-2 inset-y-2 z-40 rounded-xl bg-black/95 backdrop-blur-md border border-yellow-500/50 p-3 sm:p-4 flex flex-col items-center justify-center gap-2 sm:gap-2.5 animate-in fade-in zoom-in-95 duration-200 shadow-[0_0_30px_rgba(0,0,0,0.95)]">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 ${
                   isP1Winner
                     ? 'bg-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(16,185,129,0.8)]'
                     : 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.8)]'
                 }`}
               >
-                {isP1Winner ? <FiAward className="size-5" /> : <FiAlertTriangle className="size-5" />}
+                {isP1Winner ? <FiAward className="size-4 sm:size-5" /> : <FiAlertTriangle className="size-4 sm:size-5" />}
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm sm:text-base font-black uppercase tracking-wider text-zinc-100">
+
+              <div className="flex flex-col items-center text-center">
+                <span className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-100">
                   {isP1Winner
                     ? isP1Attacker
                       ? 'VICTORY! Territory Claimed'
@@ -255,25 +493,28 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
                     ? 'DEFEAT! Challenge Failed'
                     : 'DEFEAT! Territory Lost'}
                 </span>
-                <span className="text-xs text-zinc-300">
+                <span className="text-[10px] sm:text-xs text-zinc-300 mt-0.5 max-w-sm">
                   {resolutionReason}
                 </span>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={onFinishDuel}
-              className={`w-full sm:w-auto py-2.5 px-6 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer ${
-                isP1Winner
-                  ? 'bg-emerald-400 hover:bg-emerald-300 text-zinc-950 shadow-[0_0_15px_rgba(52,211,153,0.5)]'
-                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-600'
-              }`}
-            >
-              Return to Board
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={onFinishDuel}
+                className={`py-1.5 sm:py-2 px-5 sm:px-6 font-black text-[10px] sm:text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all cursor-pointer ${
+                  isP1Winner
+                    ? 'bg-linear-to-r from-emerald-500 via-teal-400 to-emerald-500 text-zinc-950 shadow-[0_0_15px_rgba(52,211,153,0.5)]'
+                    : 'bg-linear-to-r from-zinc-800 to-zinc-900 hover:from-zinc-700 hover:to-zinc-800 text-zinc-100 border border-zinc-600'
+                }`}
+                style={{
+                  clipPath: ACTION_BTN_CLIP,
+                }}
+              >
+                Return to Board
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
