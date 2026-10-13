@@ -1,10 +1,9 @@
-
-import ModeSelection from "@/app/_components/mode_selec/ModeSelection"
+import ModeSelec from "../_components/mode_selec/ModeSelec";
 
 const MyComponent = () => {
     return (
         <div>
-            <ModeSelection/>
+            <ModeSelec/>
         </div>
     );
 };

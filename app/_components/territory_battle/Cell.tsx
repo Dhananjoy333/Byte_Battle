@@ -42,8 +42,8 @@ export const Cell: React.FC<CellProps> = ({
   const isIsolated = owner !== null && !isConnected;
 
   // Base styling for rounded-square tactile pixel-game tile
-  let visualClasses =
-    'relative aspect-square rounded-lg sm:rounded-xl md:rounded-[13px] flex items-center justify-center transition-all duration-200 select-none';
+let visualClasses =
+  'relative aspect-square rounded-[3px] sm:rounded-[4px] md:rounded-[5px] min-[1440px]:rounded-[13px] flex items-center justify-center transition-all duration-200 select-none';
 
   if (isContested) {
     // Currently contested cell in active duel

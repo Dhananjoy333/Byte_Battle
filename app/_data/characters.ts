@@ -121,7 +121,7 @@ export const CHARACTERS_BY_ID: Record<string, CharacterConfig> = CHARACTERS.redu
 );
 
 export function getCharacterById(id: string): CharacterConfig {
-    return CHARACTERS_BY_ID[id] ?? CHARACTERS[0];
+  return CHARACTERS.find((char) => char.id === id) ?? CHARACTERS[0];
 }
 
 export function getDefaultOpponent(playerId: string): CharacterConfig {

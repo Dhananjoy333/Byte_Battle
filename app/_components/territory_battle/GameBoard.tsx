@@ -38,7 +38,6 @@ const CELL_CAPTURE_COST = 1;
 
 const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 
-
 export const GameBoard: React.FC = () => {
   const router = useRouter();
 
@@ -67,15 +66,9 @@ export const GameBoard: React.FC = () => {
 
   // Character selection integration from store (with graceful fallback to Raze)
   const { selectedCharacterId } = useGameStore();
-  const [mounted, setMounted] = useState<boolean>(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const activeChar = getCharacterById(mounted && selectedCharacterId ? selectedCharacterId : 'raze');
-  const playerCharImg = activeChar?.id && activeChar.id !== 'raze' 
-    ? `/selec_char/${activeChar.id}.png` 
-    : '/territory_img/raze.png';
-  const playerCharName = activeChar?.hudName || 'RAZE';
+  const activeChar = getCharacterById(selectedCharacterId);
+  const playerCharImg = `${IMAGEKIT_URL}/char_selec_img/${activeChar.id}.png`;
+  const playerCharName = activeChar?.hudName;
 
   // 7. Cell Duel & Conflict Management Hook
   const {
@@ -421,7 +414,7 @@ export const GameBoard: React.FC = () => {
             {/* Dynamic Cells Count */}
             <div className="absolute top-[34%] left-[47%] right-[6%] flex items-center pointer-events-none">
               <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
-                {player1Count} Cells
+                 Cells : {player1Count}
               </span>
               {player1Count !== connectedP1CellIds.size && (
                 <span className="ml-1 text-[9px] sm:text-[10px] md:text-xs font-mono font-bold text-emerald-600">
@@ -432,24 +425,12 @@ export const GameBoard: React.FC = () => {
 
             {/* Dynamic Bits Count (Clickable to open questions) */}
             <div className="absolute top-[59%] left-[47%] right-[6%] flex items-center">
-              <button
-                type="button"
-                disabled={isConflictActive || isGameFinished}
-                onClick={() => setIsQuestionModalOpen(true)}
-                className={`flex items-center gap-1.5 font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl tracking-wide font-sans transition-all cursor-pointer ${
-                  isConflictActive || isGameFinished
-                    ? 'text-zinc-500 cursor-not-allowed'
-                    : 'text-zinc-900 hover:text-amber-600 active:scale-95'
-                }`}
+              <div
+                className="flex items-center gap-1.5 font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl tracking-wide font-sans transition-all"
                 title="Earn more Bits"
               >
-                <span>Bits: {bankedBits}</span>
-                {!isGameFinished && (
-                  <span className="text-[10px] sm:text-xs bg-yellow-400 hover:bg-yellow-300 text-zinc-950 px-1.5 py-0.5 rounded-md font-black shadow-xs">
-                    +
-                  </span>
-                )}
-              </button>
+                <span>Bits : {bankedBits}</span>
+              </div>
             </div>
           </div>
 
@@ -460,7 +441,7 @@ export const GameBoard: React.FC = () => {
               aria-label="Answer Question"
               disabled={isConflictActive || isGameFinished}
               onClick={() => setIsQuestionModalOpen(true)}
-              className={`group relative aspect-2114/744 w-full max-w-67.5 sm:max-w-[320px] md:max-w-90 xl:max-w-100 2xl:max-w-[460px] flex items-center justify-center transition-all duration-150 ease-out select-none ${
+              className={`group relative aspect-2114/744 w-full max-w-67.5 sm:max-w-[320px] md:max-w-90 xl:max-w-100 2xl:max-w-115 flex items-center justify-center transition-all duration-150 ease-out select-none ${
                 isConflictActive || isGameFinished
                   ? 'opacity-50 grayscale cursor-not-allowed pointer-events-none'
                   : 'cursor-pointer hover:scale-[1.03] hover:brightness-105 active:scale-[0.98] active:brightness-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.5)] hover:drop-shadow-[0_8px_22px_rgba(250,204,21,0.4)]'
@@ -490,8 +471,7 @@ export const GameBoard: React.FC = () => {
         <div className="flex flex-col items-center shrink-0">
           {/* Byte Battle Logo */}
           <div
-            className="relative mb-0.5 sm:mb-1 select-none flex justify-center"
-            style={{ width: 'clamp(220px, 22vw, 440px)' }}
+            className="relative mb-0.5 sm:mb-1 select-none flex justify-center lg:w-60 2xl:w-110"
           >
             <Image
               src={`${IMAGEKIT_URL}/territory_img/byte_battle_logo.png`}
@@ -505,8 +485,7 @@ export const GameBoard: React.FC = () => {
 
           {/* Match Timer HUD using timer_layout.png (Nestled directly above the Board) */}
           <div
-            className="relative aspect-3974/1056 select-none shrink-0 drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)] flex items-center justify-center -mb-2 sm:-mb-3 md:-mb-4 z-20"
-            style={{ width: 'clamp(240px, 21vw, 440px)' }}
+            className="relative aspect-3974/1056 select-none shrink-0 drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)] flex items-center justify-center -mb-2 sm:-mb-3 md:-mb-4 z-20 lg:w-60 2xl:w-110"  
           >
             <Image
               src={`${IMAGEKIT_URL}/territory_img/timer_layout.png`}
@@ -517,7 +496,7 @@ export const GameBoard: React.FC = () => {
 
             {/* Top Plate Header */}
             <div className="absolute top-[10%] inset-x-0 flex items-center justify-center pointer-events-none">
-              <span className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-black uppercase tracking-[0.2em] text-slate-800">
+              <span className="text-[9px] sm:text-[10px] 2xl:text-sm font-black uppercase tracking-[0.2em] text-slate-800">
                 TIME LEFT
               </span>
             </div>
@@ -525,7 +504,7 @@ export const GameBoard: React.FC = () => {
             {/* Digital Timer Value */}
             <div className="absolute top-[30%] bottom-[12%] inset-x-[20%] flex items-center justify-center pointer-events-none">
               <span
-                className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl 2xl:text-5xl font-mono font-black tracking-widest ${
+                className={`text-xl 2xl:text-5xl font-mono font-black tracking-widest ${
                   isCriticalTime
                     ? 'text-rose-400 animate-pulse drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]'
                     : isLowTime
@@ -540,11 +519,8 @@ export const GameBoard: React.FC = () => {
 
           {/* Center 7x7 Territory Grid inside Frame Bezel */}
           <div
-            className="relative aspect-square flex items-center justify-center select-none"
-            style={{
-              width: 'clamp(420px, min(80vw, 63vh), 1020px)',
-              height: 'clamp(420px, min(80vw, 63vh), 1020px)',
-            }}
+            className="relative lg:w-143 lg:h-143 2xl:w-200 2xl:h-200 aspect-square flex items-center justify-center select-none"
+            
           >
             {/* Frame Image Overlay from /territory_img/grid_layout.png */}
             <Image
@@ -590,7 +566,7 @@ export const GameBoard: React.FC = () => {
                 </div>
 
                 {/* 7x7 Territory Grid of Cells */}
-                <div className="grid grid-cols-7 grid-rows-7 gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 flex-1 h-full w-full">
+                <div className="grid grid-cols-7 grid-rows-7 gap-1 2xl:gap-2.5 flex-1 h-full w-full">
                   {board.map((cell) => {
                     const isInteractable = interactableCellIds.has(cell.id);
                     const isChallengeable = challengeableEnemyCellIds.has(cell.id);
@@ -745,6 +721,9 @@ export const GameBoard: React.FC = () => {
         onAcceptAIChallenge={acceptAIChallenge}
         onRejectAIChallenge={rejectAIChallenge}
         onDismissFeedback={finishConflict}
+        playerCharImg={playerCharImg}
+        enemyCharImg={`${IMAGEKIT_URL}/territory_img/boss.png`}
+        opponentNumber={2}
       />
 
       {/* Live 10-Second Cell Duel Modal */}

@@ -64,7 +64,7 @@ function Story() {
                   onMouseUp={handleMouseLeave}
                   onMouseEnter={handleMouseLeave}
                   onMouseMove={handleMouseMove}
-                   src={`${IMAGEKIT_URL}/img/entrance.webp`}
+                   src={`${IMAGEKIT_URL}/main_page_img/entrance.webp`}
                   alt="entrance"
                   width={2000}
                   height={2000}
