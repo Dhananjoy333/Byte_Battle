@@ -22,7 +22,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
         glowColor: 'rgba(14, 165, 233, 0.45)',
         accentColor: '#38bdf8',
         groundGlow: 'rgba(56, 189, 248, 0.22)',
-        charImageUrl: '/selec_char/aurelia.png',
+        charImageUrl: `${IMAGEKIT_URL}/char_selec_img/aurelia.png`,
     },
     kira: {
         id: 'kira',
@@ -32,7 +32,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
         glowColor: 'rgba(244, 63, 94, 0.48)',
         accentColor: '#f43f5e',
         groundGlow: 'rgba(244, 63, 94, 0.22)',
-        charImageUrl: '/selec_char/kira.png',
+        charImageUrl: `${IMAGEKIT_URL}/char_selec_img/kira.png`,
     },
     lucien: {
         id: 'lucien',
@@ -42,7 +42,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
         glowColor: 'rgba(255, 255, 255, 0.55)',
         accentColor: '#ffffff',
         groundGlow: 'rgba(255, 255, 255, 0.24)',
-        charImageUrl: '/selec_char/lucien.png',
+        charImageUrl: `${IMAGEKIT_URL}/char_selec_img/lucien.png`,
     },
     raizen: {
         id: 'raizen',
@@ -52,7 +52,7 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
         glowColor: 'rgba(234, 179, 8, 0.48)',
         accentColor: '#eab308',
         groundGlow: 'rgba(234, 179, 8, 0.22)',
-        charImageUrl: '/selec_char/raizen.png',
+        charImageUrl: `${IMAGEKIT_URL}/char_selec_img/raizen.png`,
     },
     raze: {
         id: 'raze',
@@ -62,11 +62,11 @@ export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
         glowColor: 'rgba(239, 68, 68, 0.48)',
         accentColor: '#ef4444',
         groundGlow: 'rgba(239, 68, 68, 0.22)',
-        charImageUrl: '/selec_char/raze.png',
+        charImageUrl: `${IMAGEKIT_URL}/char_selec_img/raze.png`,
     },
 };
 
-export const GROUND_IMAGE_URL = `${IMAGEKIT_URL}/img/char_selec_bg.png`;
+export const GROUND_IMAGE_URL = `${IMAGEKIT_URL}/char_selec_img/char_bg.png`;
 
 export function getCharacterTheme(id: string): CharacterTheme {
     return CHARACTER_THEMES[id] ?? CHARACTER_THEMES['aurelia'];

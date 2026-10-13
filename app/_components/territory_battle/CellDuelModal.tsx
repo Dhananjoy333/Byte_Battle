@@ -6,6 +6,8 @@ import { Cell, CellOwner } from './types';
 import { TerritoryQuestion, QuestionOption } from './data/questions';
 import { FiClock, FiCheck, FiX, FiAward, FiAlertTriangle, FiZap } from 'react-icons/fi';
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 interface CellDuelModalProps {
   isOpen: boolean;
   cell: Cell | null;
@@ -221,7 +223,7 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
         {/* Contains the metallic frame, crown, CONTEST MATCH title      */}
         {/* ============================================================ */}
         <Image
-          src="/territory_img/contest_match_frame.png"
+          src={`${IMAGEKIT_URL}/territory_img/contest_match_frame.png`}
           alt="Contest Match Frame"
           fill
           priority
@@ -245,7 +247,7 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
         <div className="absolute z-15 top-[33.2%] left-[10.5%] right-[10.5%] w-[79%] h-[9.8%]">
           {/* Banner Graphic Asset */}
           <Image
-            src="/territory_img/vs_banner.png"
+            src={`${IMAGEKIT_URL}/territory_img/vs_banner.png`}
             alt="Versus Banner"
             fill
             priority
@@ -303,7 +305,7 @@ export const CellDuelModal: React.FC<CellDuelModalProps> = ({
         {/* ============================================================ */}
         <div className="absolute z-20 top-[43.8%] left-[10.5%] right-[10.5%] w-[79%] h-[40.2%] pointer-events-none select-none">
           <Image
-            src="/territory_img/contest_question_layout.png"
+            src={`${IMAGEKIT_URL}/territory_img/contest_question_layout.png`}
             alt="Contest Question Frame"
             fill
             priority

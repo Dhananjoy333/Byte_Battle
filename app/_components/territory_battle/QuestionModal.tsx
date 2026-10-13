@@ -6,6 +6,8 @@ import { QuestionCard } from './QuestionCard';
 import { FiX, FiCheckCircle, FiAlertTriangle, FiArrowRight, FiShield } from 'react-icons/fi';
 import Image from 'next/image';
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 interface QuestionModalProps {
   isOpen: boolean;
   bankedBits: number;
@@ -105,7 +107,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         {/* LAYER 1: Outer Decorative Frame (question_outer_layer.png)   */}
         {/* ============================================================ */}
         <Image
-          src="/territory_img/question_outer_layer.png"
+          src={`${IMAGEKIT_URL}/territory_img/question_outer_layer.png`}
           alt="Programming Challenge Frame"
           width={760}
           height={667}
@@ -200,7 +202,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           }}
         >
           <Image
-            src="/territory_img/question_layout.png"
+            src={`${IMAGEKIT_URL}/territory_img/question_layout.png`}
             alt="Question Layout Frame"
             fill
             priority

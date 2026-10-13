@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { MatchState } from './matchLogic';
 import { FiRotateCcw, FiLogOut, FiClock, FiTarget, FiAward } from 'react-icons/fi';
 
+const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
+
 interface GameOverModalProps {
   isOpen: boolean;
   matchState: MatchState;
@@ -77,7 +79,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       <div className="relative w-[min(96vw,calc(88vh*1.7758),1550px)] aspect-1671/941 my-auto shrink-0 select-none flex items-center justify-center">
         {/* Layer 0: Frame Background Image (result_layout.png) */}
         <Image
-          src="/territory_img/result_layout.png"
+          src={`${IMAGEKIT_URL}/territory_img/result_layout.png`}
           alt="Match Results Frame"
           width={1680}
           height={941}

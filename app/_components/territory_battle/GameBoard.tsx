@@ -67,7 +67,7 @@ export const GameBoard: React.FC = () => {
   // Character selection integration from store (with graceful fallback to Raze)
   const { selectedCharacterId } = useGameStore();
   const activeChar = getCharacterById(selectedCharacterId);
-  const playerCharImg = `/selec_char/${activeChar.id}.png`;
+  const playerCharImg = `${IMAGEKIT_URL}/char_selec_img/${activeChar.id}.png`;
   const playerCharName = activeChar?.hudName;
 
   // 7. Cell Duel & Conflict Management Hook

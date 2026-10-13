@@ -64,15 +64,15 @@ export const ChallengePrompt: React.FC<ChallengePromptProps> = ({
     : 'Target Cell';
 
   const playerAvatarSrc = playerImgError
-    ? '/selec_char/raze.png'
-    : playerCharImg || `/selec_char/${activeChar?.id || 'raze'}.png`;
+    ? `${IMAGEKIT_URL}/char_selec_img/raze.png`
+    : playerCharImg || `${IMAGEKIT_URL}/char_selec_img/${activeChar?.id || 'raze'}.png`;
 
   const enemyAvatarSrc = enemyImgError
-    ? '/selec_char/kira.png'
+    ? `${IMAGEKIT_URL}/char_selec_img/kira.png`
     : enemyCharImg ||
     (IMAGEKIT_URL
       ? `${IMAGEKIT_URL}/territory_img/boss.png`
-      : '/territory_img/boss.png');
+      : `${IMAGEKIT_URL}/territory_img/boss.png`);
 
   const isIncoming = phase === 'ai-challenge-request';
   const isOutgoing = phase === 'waiting-for-ai';
@@ -97,7 +97,7 @@ export const ChallengePrompt: React.FC<ChallengePromptProps> = ({
       <div className="relative w-full max-w-125 min-[560px]:max-w-155 sm:max-w-175 md:max-w-195 lg:max-w-210 2xl:max-w-300 aspect-1671/941 my-auto shrink-0 select-none flex items-center justify-center">
         {/* Layer 0: Frame Background Image (duel_layout.png) */}
         <Image
-          src="/territory_img/duel_layout.png"
+          src={`${IMAGEKIT_URL}/territory_img/duel_layout.png`}
           alt=""
           width={1671}
           height={941}
@@ -350,7 +350,7 @@ export const ChallengePrompt: React.FC<ChallengePromptProps> = ({
               <button
                 type="button"
                 onClick={onDismissFeedback}
-                className="w-full max-w-[240px] sm:max-w-[320px] md:max-w-[380px] py-1.5 sm:py-2 md:py-2.5 px-4 rounded-xl bg-[#0c1633]/90 hover:bg-[#12224d] border border-blue-500/50 hover:border-blue-400/80 text-zinc-100 hover:text-white font-black text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] shadow-[0_0_18px_rgba(30,58,138,0.4)] hover:shadow-[0_0_24px_rgba(59,130,246,0.6)] active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="w-full max-w-60 sm:max-w-[320px] md:max-w-95 py-1.5 sm:py-2 md:py-2.5 px-4 rounded-xl bg-[#0c1633]/90 hover:bg-[#12224d] border border-blue-500/50 hover:border-blue-400/80 text-zinc-100 hover:text-white font-black text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] shadow-[0_0_18px_rgba(30,58,138,0.4)] hover:shadow-[0_0_24px_rgba(59,130,246,0.6)] active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                 aria-label="Continue after territory surrender"
               >
                 CONTINUE
@@ -366,11 +366,11 @@ export const ChallengePrompt: React.FC<ChallengePromptProps> = ({
           <div className="absolute top-[28%] bottom-[16%] left-[18%] right-[18%] z-20 flex flex-col items-center justify-between text-center py-1 min-[480px]:py-1.5 sm:py-2 md:py-3 px-1">
             {/* Eyebrow Label with Decorative Accents */}
             <div className="flex items-center justify-center gap-2 sm:gap-3 w-full">
-              <div className="hidden min-[420px]:block h-px w-6 sm:w-10 md:w-14 bg-gradient-to-r from-transparent to-emerald-400/70" />
+              <div className="hidden min-[420px]:block h-px w-6 sm:w-10 md:w-14 bg-linear-to-r from-transparent to-emerald-400/70" />
               <span className="text-[7.5px] min-[420px]:text-[8.5px] min-[520px]:text-[9.5px] sm:text-[11px] md:text-xs font-mono font-black uppercase tracking-[0.25em] text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
                 OPPONENT SURRENDERED
               </span>
-              <div className="hidden min-[420px]:block h-px w-6 sm:w-10 md:w-14 bg-gradient-to-l from-transparent to-emerald-400/70" />
+              <div className="hidden min-[420px]:block h-px w-6 sm:w-10 md:w-14 bg-linear-to-l from-transparent to-emerald-400/70" />
             </div>
 
             {/* Main Outcome Heading & Description */}
@@ -404,7 +404,7 @@ export const ChallengePrompt: React.FC<ChallengePromptProps> = ({
               <button
                 type="button"
                 onClick={onDismissFeedback}
-                className="w-full max-w-[240px] sm:max-w-[320px] md:max-w-[380px] py-1.5 sm:py-2 md:py-2.5 px-4 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-zinc-950 font-black text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] shadow-[0_0_18px_rgba(16,185,129,0.5)] hover:shadow-[0_0_26px_rgba(16,185,129,0.8)] active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="w-full max-w-60 sm:max-w-[320px] md:max-w-95 py-1.5 sm:py-2 md:py-2.5 px-4 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-zinc-950 font-black text-[9px] min-[420px]:text-[10px] sm:text-xs md:text-sm uppercase tracking-[0.2em] shadow-[0_0_18px_rgba(16,185,129,0.5)] hover:shadow-[0_0_26px_rgba(16,185,129,0.8)] active:scale-95 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                 aria-label="Continue after territory captured"
               >
                 CONTINUE

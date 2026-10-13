@@ -47,7 +47,7 @@ function About() {
         <div className='h-dvh w-screen' id='clip'>
             <div className='mask-clip-path about-image' >
                 <Image 
-                    src={`${IMAGEKIT_URL}/img/about.png`} 
+                    src={`${IMAGEKIT_URL}/main_page_img/about.png`} 
                     alt='background' 
                     width={4000}
                     height={4000}

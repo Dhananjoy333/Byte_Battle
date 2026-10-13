@@ -31,6 +31,10 @@ html{
   --color-yellow-300: #EDFF66;
 }
 
+@theme inline {
+  --font-russo-one: var(--font-russo-one-family);
+  --font-chakra-petch: var(--font-chakra-petch-family);
+}
 @layer base {
   @font-face {
     font-family: 'zentry';
