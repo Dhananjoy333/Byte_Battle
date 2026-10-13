@@ -28,7 +28,7 @@ export function getBaseLocation(
 /**
  * Centralized Game & AI Configuration Constants
  */
-export const MATCH_DURATION = 1200000; // 2 minutes (120 seconds)
+export const MATCH_DURATION = 120; // 2 minutes (120 seconds)
 export const AI_CAPTURE_INTERVAL = 5000;
 export const AI_ACCEPT_CHALLENGE_PROBABILITY = 0.5;
 export const AI_CORRECT_ANSWER_PROBABILITY = 0.3;
