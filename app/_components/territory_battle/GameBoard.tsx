@@ -18,9 +18,9 @@ import {
   P2_BASE,
   AI_CAPTURE_INTERVAL,
   PLAYER_CHALLENGE_COST,
-} from './territoryLogic';
-import { MatchState, INITIAL_MATCH_STATE, formatMatchTime } from './matchLogic';
-import { useMatchTimer } from './useMatchTimer';
+} from './logic/territoryLogic';
+import { MatchState, INITIAL_MATCH_STATE, formatMatchTime } from './logic/matchLogic';
+import { useMatchTimer } from './hooks/useMatchTimer';
 import { Cell } from './Cell';
 import { CapturePopover } from './CapturePopover';
 import { ChallengePopover } from './ChallengePopover';
@@ -28,8 +28,8 @@ import { QuestionModal } from './QuestionModal';
 import { ChallengePrompt } from './ChallengePrompt';
 import { CellDuelModal } from './CellDuelModal';
 import { GameOverModal } from './GameOverModal';
-import { useAITerritoryExpansion } from './useAITerritoryExpansion';
-import { useCellDuel } from './useCellDuel';
+import { useAITerritoryExpansion } from './hooks/useAITerritoryExpansion';
+import { useCellDuel } from './hooks/useCellDuel';
 import { useGameStore } from '@/app/_store/useGameStore';
 import { getCharacterById } from '@/app/_data/characters';
 import Image from 'next/image';
@@ -532,7 +532,7 @@ export const GameBoard: React.FC = () => {
             />
 
             {/* Inner Grid Area (fitted precisely within transparent window of grid_layout.png: 20.6% inset has 0% frame overlap in all 4 corners) */}
-            <div className="absolute left-[20.6%] right-[20.6%] top-[20.5%] bottom-[20.5%] z-10 flex flex-col p-1.5 sm:p-2 md:p-2.5 bg-[#171f2f]/95 rounded-xl sm:rounded-2xl border border-white/10 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)] backdrop-blur-xs">
+            <div className="absolute left-[20.6%] right-[20.6%] top-[20.5%] bottom-[20.5%] z-10 flex flex-col p-1.5 sm:p-2 md:p-2.5 bg-[#171f2f]/90 rounded-xl sm:rounded-2xl border border-white/10 shadow-[inset_0_2px_12px_rgba(0,0,0,0.9)] backdrop-blur-xs">
               {/* Column Coordinate Labels (0..6) - Horizontally synchronized with the 7 columns */}
               <div className="flex w-full mb-1 sm:mb-1.5 shrink-0">
                 {/* Spacer exactly matching row coordinate column width + right margin */}

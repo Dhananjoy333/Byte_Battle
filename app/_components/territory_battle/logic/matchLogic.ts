@@ -1,4 +1,4 @@
-import { CellOwner } from './types';
+import { CellOwner } from '../types';
 
 export type MatchStatus = 'playing' | 'finished';
 export type MatchResult = 'p1-win' | 'p2-win' | 'draw' | null;

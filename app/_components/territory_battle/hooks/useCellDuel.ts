@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Cell, CellOwner } from './types';
+import { Cell, CellOwner } from '../types';
 import {
   ConflictState,
   INITIAL_CONFLICT_STATE,
   getRandomDuelQuestion,
   resolveCellOwnershipAfterDuel,
-} from './duelLogic';
+} from '../logic/duelLogic';
 import {
   AI_ACCEPT_CHALLENGE_PROBABILITY,
   AI_CORRECT_ANSWER_PROBABILITY,
@@ -16,7 +16,7 @@ import {
   AI_REJECTION_REFUND,
   P1_BASE,
   P2_BASE,
-} from './territoryLogic';
+} from '../logic/territoryLogic';
 
 interface UseCellDuelOptions {
   board: Cell[];

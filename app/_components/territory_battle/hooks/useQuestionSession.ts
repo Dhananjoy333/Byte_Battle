@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { TERRITORY_QUESTIONS, TerritoryQuestion } from './data/questions';
+import { TERRITORY_QUESTIONS, TerritoryQuestion } from '../data/questions';
 
 export type SessionStatus = 'answering' | 'decision' | 'lost' | 'idle';
 

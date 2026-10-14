@@ -7,10 +7,10 @@ export { CellDuelModal } from './CellDuelModal';
 export { GameOverModal } from './GameOverModal';
 export { QuestionModal } from './QuestionModal';
 export { QuestionCard } from './QuestionCard';
-export { useQuestionSession } from './useQuestionSession';
-export { useAITerritoryExpansion } from './useAITerritoryExpansion';
-export { useCellDuel } from './useCellDuel';
-export { useMatchTimer } from './useMatchTimer';
+export { useQuestionSession } from './hooks/useQuestionSession';
+export { useAITerritoryExpansion } from './hooks/useAITerritoryExpansion';
+export { useCellDuel } from './hooks/useCellDuel';
+export { useMatchTimer } from './hooks/useMatchTimer';
 export { TERRITORY_QUESTIONS } from './data/questions';
 export {
   canCaptureCell,
@@ -39,9 +39,9 @@ export {
   PLAYER_CHALLENGE_COST,
   AI_REJECTION_REFUND,
   AI_CHALLENGE_PROBABILITY,
-} from './territoryLogic';
-export type { BaseLocation } from './territoryLogic';
+} from './logic/territoryLogic';
+export type { BaseLocation } from './logic/territoryLogic';
 export * from './types';
-export * from './duelLogic';
-export * from './matchLogic';
+export * from './logic/duelLogic';
+export * from './logic/matchLogic';
 export * from './data/questions';

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { MatchState } from './matchLogic';
+import { MatchState } from './logic/matchLogic';
 import { FiRotateCcw, FiLogOut, FiClock, FiTarget, FiAward } from 'react-icons/fi';
 
 const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;

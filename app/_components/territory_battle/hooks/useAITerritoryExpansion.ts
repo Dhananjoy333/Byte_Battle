@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Cell } from './types';
+import { Cell } from '../types';
 import {
   performAIExpansion,
   getChallengeableEnemyCells,
@@ -9,7 +9,7 @@ import {
   chooseRandomCell,
   AI_CAPTURE_INTERVAL,
   AI_CHALLENGE_PROBABILITY,
-} from './territoryLogic';
+} from '../logic/territoryLogic';
 
 interface UseAITerritoryExpansionOptions {
   board: Cell[];

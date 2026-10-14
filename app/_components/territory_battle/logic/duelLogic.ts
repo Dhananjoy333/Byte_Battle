@@ -1,5 +1,5 @@
-import { Cell, CellOwner } from './types';
-import { TERRITORY_QUESTIONS, TerritoryQuestion } from './data/questions';
+import { Cell, CellOwner } from '../types';
+import { TERRITORY_QUESTIONS, TerritoryQuestion } from '../data/questions';
 
 export type ConflictPhase =
   | 'idle'
