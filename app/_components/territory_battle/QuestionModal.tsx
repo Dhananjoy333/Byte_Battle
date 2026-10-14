@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useCallback } from 'react';
-import { useQuestionSession } from './useQuestionSession';
+import { useQuestionSession } from './hooks/useQuestionSession';
 import { QuestionCard } from './QuestionCard';
 import { FiX, FiCheckCircle, FiAlertTriangle, FiArrowRight, FiShield } from 'react-icons/fi';
 import Image from 'next/image';

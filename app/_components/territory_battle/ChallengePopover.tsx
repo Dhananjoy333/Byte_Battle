@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { PLAYER_CHALLENGE_COST } from './territoryLogic';
+import { PLAYER_CHALLENGE_COST } from './logic/territoryLogic';
 
 interface ChallengePopoverProps {
   row: number;

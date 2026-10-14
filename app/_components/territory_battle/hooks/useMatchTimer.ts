@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MATCH_DURATION } from "./territoryLogic";
+import { MATCH_DURATION } from "../logic/territoryLogic";
 
 interface UseMatchTimerOptions {
   duration?: number;

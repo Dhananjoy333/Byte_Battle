@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Cell } from './types';
-import { ConflictPhase } from './duelLogic';
-import { P1_BASE, P2_BASE } from './territoryLogic';
+import { ConflictPhase } from './logic/duelLogic';
+import { P1_BASE, P2_BASE } from './logic/territoryLogic';
 import { FiShield, FiAlertTriangle, FiCheckCircle, FiFlag } from 'react-icons/fi';
 import { GiCrossedSwords } from 'react-icons/gi';
 import { BsGrid3X3GapFill } from 'react-icons/bs';
