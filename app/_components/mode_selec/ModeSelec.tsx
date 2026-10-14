@@ -279,10 +279,12 @@ export default function ModeSelec({
     const selCards = cardsContainerRef.current?.querySelectorAll("[data-mode-card]");
     const oppCards = opponentsContainerRef.current?.querySelectorAll("[data-opponent-card]");
     const diffCards = difficultiesContainerRef.current?.querySelectorAll("[data-difficulty-card]");
+    const pvpCards = setupStageRef.current?.querySelectorAll("[data-pvp-card]");
 
     const tl = gsap.timeline({
       onComplete: () => {
         setStage("selection");
+        setSelectedOpponent("pve");
         isTransitioningRef.current = false;
         if (setupStageRef.current) {
           gsap.set(setupStageRef.current, {
@@ -318,6 +320,20 @@ export default function ModeSelec({
     if (diffCards && diffCards.length > 0) {
       tl.to(
         diffCards,
+        {
+          y: 20,
+          autoAlpha: 0,
+          duration: 0.28,
+          ease: "power2.in",
+          stagger: 0.03,
+        },
+        "setupExit"
+      );
+    }
+
+    if (pvpCards && pvpCards.length > 0) {
+      tl.to(
+        pvpCards,
         {
           y: 20,
           autoAlpha: 0,
