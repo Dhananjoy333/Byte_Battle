@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, forwardRef } from "react";
+import React, { useState, forwardRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { connectSocket, socket } from "@/lib/socket";
 
 interface PvpOptionsPanelProps {
   onFindMatch?: () => void;
@@ -60,18 +62,76 @@ const CyberCorners = ({ color }: { color: string }) => (
 
 export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
   function PvpOptionsPanel({ onFindMatch, onConnectRoom, dividerRef }, ref) {
+    const router = useRouter();
     const [roomId, setRoomId] = useState<string>("");
     const [inputRoomId, setInputRoomId] = useState<string>("");
+    const [inputError, setInputError] = useState<string>("");
+    const [isConnecting, setIsConnecting] = useState<boolean>(false);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [copied, setCopied] = useState<boolean>(false);
+    const [player, setPlayer] = useState<string | null>(() => {
+      // 1. Prevent this from running on the server during SSR
+      if (typeof window === "undefined") return null;
 
-    // Generate 6-character random room code
-    const handleGenerateRoom = () => {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let code = "";
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      // 2. Read or generate the ID during the initial client render
+      let id = sessionStorage.getItem("byte-battle-player-id");
+
+      if (!id) {
+        id = crypto.randomUUID().slice(0, 8);
+        sessionStorage.setItem("byte-battle-player-id", id);
       }
-      setRoomId(code);
+      console.log('player id: ', id)
+      return id;
+    });
+
+    useEffect(() => {
+      const handleRoomUpdate = (response: {
+        roomId: string;
+        playerCount?: number;
+        status?: string;
+      }) => {
+        console.log(`you are connected to room ${response.roomId}`, response);
+        if (response.roomId) {
+          setRoomId(response.roomId);
+        }
+        setIsConnected(true);
+        setIsConnecting(false);
+      };
+
+      socket.on("room_update", handleRoomUpdate);
+
+      return () => {
+        socket.off("room_update", handleRoomUpdate);
+      };
+    }, []);
+
+    const handleGenerateRoom = async function () {
+      try {
+        await connectSocket();
+
+        socket.emit(
+          "create_room",
+          { player },
+          (response: {
+            ok: boolean;
+            room?: { id: string };
+            error?: string;
+          }) => {
+            if (!response.ok || !response.room) {
+              console.error(response.error ?? "Failed to create room");
+              return;
+            }
+
+            const roomId = response.room.id;
+
+            setRoomId(roomId);
+
+            console.log("Room created:", roomId);
+          }
+        );
+      } catch (error) {
+        console.error("Failed to create:", error);
+      }
     };
 
     // Copy room code to clipboard
@@ -86,12 +146,61 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
       }
     };
 
-    const handleConnect = () => {
-      const code = inputRoomId.trim();
-      if (!code) return;
-      if (onConnectRoom) {
-        onConnectRoom(code);
+    const handleConnect = async function () {
+      const roomIdToJoin = inputRoomId.trim();
+
+      if (!roomIdToJoin) {
+        setInputError("Please enter a room ID");
+        return;
       }
+
+      setInputError("");
+      setIsConnecting(true);
+
+      try {
+        // Step 2: Connect and wait until connected.
+        await connectSocket();
+
+        // Step 3: Join the Socket.IO room.
+        socket.emit(
+          "join_room",
+          {
+            roomId: roomIdToJoin,
+            player,
+          },
+          (response: {
+            ok: boolean;
+            room?: { id: string };
+            error?: string;
+          }) => {
+            if (!response.ok || !response.room) {
+              console.error(response.error ?? "Failed to join room");
+              setIsConnecting(false);
+              setInputError(response.error ?? "Room not found");
+              setInputRoomId("");
+              return;
+            }
+
+            const roomID = response.room.id;
+            console.log("Room joined", roomID);
+            setRoomId(roomID);
+          }
+        );
+      } catch (error) {
+        console.error("Failed to create or join room:", error);
+        setIsConnecting(false);
+        setInputError(
+          error instanceof Error ? error.message : "Unable to join room"
+        );
+        setInputRoomId("");
+      }
+    };
+
+    const handleContinue = () => {
+      if (onConnectRoom && roomId) {
+        onConnectRoom(roomId);
+      }
+      router.push("/char_selection");
     };
 
     return (
@@ -178,7 +287,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
           <button
             type="button"
             onClick={onFindMatch}
-            className="w-full py-3 sm:py-3.5 px-6 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 text-white font-black tracking-widest text-xs sm:text-sm uppercase flex items-center justify-center gap-2 shadow-[0_4px_18px_rgba(124,58,237,0.38)] hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+            className="w-full py-3 sm:py-3.5 px-6 rounded-xl bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 text-white font-black tracking-widest text-xs sm:text-sm uppercase flex items-center justify-center gap-2 shadow-[0_4px_18px_rgba(124,58,237,0.38)] hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
           >
             <span>FIND MATCH</span>
             <svg
@@ -264,11 +373,10 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
                   onClick={handleCopy}
                   title="Copy room code"
                   disabled={!roomId}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    roomId
-                      ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/70"
-                      : "text-slate-400 opacity-60 cursor-not-allowed"
-                  }`}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${roomId
+                    ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/70"
+                    : "text-slate-400 opacity-60 cursor-not-allowed"
+                    }`}
                 >
                   {copied ? (
                     <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -284,52 +392,178 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
               </div>
             </div>
 
-            {/* ENTER ROOM ID Column */}
-            <div className="flex flex-col">
-              <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1 text-center sm:text-left">
-                ENTER ROOM ID
-              </span>
-              <input
-                type="text"
-                value={inputRoomId}
-                onChange={(e) => setInputRoomId(e.target.value.toUpperCase())}
-                placeholder="Enter room ID..."
-                maxLength={10}
-                className="h-10 sm:h-11 bg-white border border-slate-300 rounded-xl px-3 text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs uppercase tracking-wider"
-              />
-            </div>
+            {/* ENTER ROOM ID / LOBBY STATUS Column */}
+            {isConnected ? (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    LOBBY STATUS
+                  </span>
+                </div>
+                <div className="flex items-center justify-between h-10 sm:h-11 bg-emerald-50/80 border border-emerald-300/80 rounded-xl px-3 shadow-inner">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative flex items-center justify-center shrink-0 w-4 h-4 text-emerald-600">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      </span>
+                    </div>
+                    <span className="font-bold text-xs sm:text-[13px] text-emerald-800 tracking-wide truncate">
+                      Connected
+                    </span>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-emerald-800 bg-emerald-100/90 border border-emerald-200 rounded-lg px-2 py-0.5 shadow-2xs">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>2 / 2</span>
+                  </div>
+                </div>
+              </div>
+            ) : isConnecting ? (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    LOBBY STATUS
+                  </span>
+                </div>
+                <div className="flex items-center justify-between h-10 sm:h-11 bg-blue-50/70 border border-blue-300/80 rounded-xl px-3 shadow-inner">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative flex items-center justify-center shrink-0 w-4 h-4 text-blue-600">
+                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-xs sm:text-[13px] text-slate-800 tracking-wide truncate">
+                      Connecting
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-blue-600 font-black text-xs shrink-0">
+                      <span className="animate-pulse">.</span>
+                      <span className="animate-pulse [animation-delay:200ms]">.</span>
+                      <span className="animate-pulse [animation-delay:400ms]">.</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : !roomId ? (
+              <div className="flex flex-col">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700 mb-1 text-center sm:text-left">
+                  ENTER ROOM ID
+                </span>
+                <input
+                  type="text"
+                  value={inputRoomId}
+                  onChange={(e) => {
+                    setInputRoomId(e.target.value);
+                    if (inputError) setInputError("");
+                  }}
+                  placeholder={inputError || "Enter room ID..."}
+                  maxLength={10}
+                  className={`h-10 sm:h-11 bg-white border rounded-xl px-3 text-xs sm:text-sm font-medium text-slate-800 focus:outline-none shadow-xs tracking-wider transition-colors ${inputError
+                    ? "border-rose-400 placeholder:text-rose-500 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20"
+                    : "border-slate-300 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                    }`}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-slate-700">
+                    LOBBY STATUS
+                  </span>
+                </div>
+                <div className="flex items-center justify-between h-10 sm:h-11 bg-amber-50/70 border border-amber-300/80 rounded-xl px-3 shadow-inner">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative flex items-center justify-center shrink-0 w-4 h-4 text-amber-600">
+                      <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-xs sm:text-[13px] text-slate-800 tracking-wide truncate">
+                      Waiting for friend
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-amber-600 font-black text-xs shrink-0">
+                      <span className="animate-pulse">.</span>
+                      <span className="animate-pulse [animation-delay:200ms]">.</span>
+                      <span className="animate-pulse [animation-delay:400ms]">.</span>
+                    </span>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-100/90 border border-amber-200 rounded-lg px-2 py-0.5 shadow-2xs">
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 stroke-current fill-none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <line x1="19" y1="8" x2="19" y2="14" />
+                      <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                    <span>1 / 2</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Action Buttons Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-            {/* Generate Room ID Button */}
+          {isConnected ? (
             <button
               type="button"
-              onClick={handleGenerateRoom}
-              className="h-10 sm:h-11 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black tracking-wider text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(16,185,129,0.32)] hover:brightness-105 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+              onClick={handleContinue}
+              className="w-full py-3 sm:py-3.5 px-6 rounded-xl bg-linear-to-r from-emerald-500 via-green-600 to-emerald-600 text-white font-black tracking-widest text-xs sm:text-sm uppercase flex items-center justify-center gap-2 shadow-[0_4px_18px_rgba(16,185,129,0.38)] hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
+              <span>CONTINUE</span>
+              <svg
+                viewBox="0 0 24 24"
+                className="w-4 h-4 stroke-current fill-none transition-transform duration-200 group-hover:translate-x-1"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
               </svg>
-              <span>GENERATE ROOM ID</span>
             </button>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+              {/* Generate Room ID Button */}
+              <button
+                type="button"
+                onClick={handleGenerateRoom}
+                disabled={isConnecting}
+                className={`h-10 sm:h-11 px-3 rounded-xl bg-linear-to-r from-emerald-500 to-green-600 text-white font-black tracking-wider text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(16,185,129,0.32)] transition-all ${
+                  isConnecting
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:brightness-105 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                }`}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+                <span>GENERATE ROOM ID</span>
+              </button>
 
-            {/* Connect to Room ID Button */}
-            <button
-              type="button"
-              onClick={handleConnect}
-              className="h-10 sm:h-11 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black tracking-wider text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(37,99,235,0.32)] hover:brightness-105 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                <polyline points="10 17 15 12 10 7" />
-                <line x1="15" y1="12" x2="3" y2="12" />
-              </svg>
-              <span>CONNECT TO ROOM ID</span>
-            </button>
-          </div>
+              {/* Connect to Room ID Button */}
+              {!roomId && !isConnecting && (
+                <button
+                  type="button"
+                  onClick={handleConnect}
+                  className="h-10 sm:h-11 px-3 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 text-white font-black tracking-wider text-[11px] sm:text-xs uppercase flex items-center justify-center gap-1.5 shadow-[0_4px_16px_rgba(37,99,235,0.32)] hover:brightness-105 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  <span>CONNECT TO ROOM ID</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
