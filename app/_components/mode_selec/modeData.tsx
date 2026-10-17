@@ -40,6 +40,8 @@ export interface ModeItem {
   accent: string;
   icon: React.ReactNode;
   tilt: number;
+  disabled?: boolean;
+  overlayImage?: string;
 }
 
 const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
@@ -72,6 +74,8 @@ export const MODES: ModeItem[] = [
     accent: "#2f9bff",
     icon: GraphIcon,
     tilt: 0,
+    disabled: true,
+    overlayImage: `${IMAGEKIT_URL}/mode_selec_img/dsa_overlay.png?tr=w-800,q-80`,
   },
   {
     id: "bug",
@@ -86,6 +90,8 @@ export const MODES: ModeItem[] = [
     accent: "#ff4d5e",
     icon: BugIcon,
     tilt: 1.5,
+    disabled: true,
+    overlayImage: `${IMAGEKIT_URL}/mode_selec_img/bug_overlay.png?tr=w-800,q-80`,
   },
 ];
 
