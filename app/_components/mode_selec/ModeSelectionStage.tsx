@@ -49,8 +49,14 @@ export const ModeSelectionStage = forwardRef<HTMLDivElement, ModeSelectionStageP
               >
                 <ModeCard
                   {...mode}
-                  onSelect={() => onSelectMode(mode.id)}
-                  onInfo={() => console.log("Info:", mode.id)}
+                  onSelect={() => {
+                    if (mode.disabled) return;
+                    onSelectMode(mode.id);
+                  }}
+                  onInfo={() => {
+                    if (mode.disabled) return;
+                    console.log("Info:", mode.id);
+                  }}
                 />
               </div>
             </div>

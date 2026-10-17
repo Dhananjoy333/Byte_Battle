@@ -13,6 +13,8 @@ interface Props {
   accent: string;
   icon: ReactNode;
   tilt?: number;
+  disabled?: boolean;
+  overlayImage?: string;
   onSelect: () => void;
   onInfo: () => void;
 }
@@ -29,6 +31,8 @@ export default function ModeCard({
   accent = "#22c55e",
   icon,
   tilt = 0,
+  disabled = false,
+  overlayImage,
   onSelect,
   onInfo,
 }: Props) {
@@ -37,9 +41,15 @@ export default function ModeCard({
 
   return (
     <article
-      className="group relative flex h-full w-full min-w-0 flex-col transition-transform duration-300 ease-out hover:-translate-y-2"
+      className={`group relative flex h-full w-full min-w-0 flex-col transition-transform duration-300 ease-out ${
+        disabled
+          ? "cursor-not-allowed select-none"
+          : "hover:-translate-y-2 cursor-pointer"
+      }`}
       style={{
-        filter: `drop-shadow(0 0 14px ${tint(25)}) drop-shadow(0 14px 24px rgba(15,23,42,0.12))`,
+        filter: disabled
+          ? `drop-shadow(0 0 10px ${tint(14)}) drop-shadow(0 10px 20px rgba(15,23,42,0.22))`
+          : `drop-shadow(0 0 14px ${tint(25)}) drop-shadow(0 14px 24px rgba(15,23,42,0.12))`,
       }}
     >
       {/* Tilt wrapper keeps hover movement independent of rotation */}
@@ -54,7 +64,9 @@ export default function ModeCard({
           className="h-full w-full flex-1 p-0.5"
           style={{
             clipPath: CLIP,
-            background: `linear-gradient(160deg, ${accent}, ${tint(30)} 40%, ${accent})`,
+            background: disabled
+              ? `linear-gradient(160deg, ${tint(60)}, ${tint(20)} 40%, ${tint(40)})`
+              : `linear-gradient(160deg, ${accent}, ${tint(30)} 40%, ${accent})`,
           }}
         >
           {/* Card body */}
@@ -75,18 +87,54 @@ export default function ModeCard({
                 fill
                 sizes="(max-width: 767px) 100vw, (max-width: 1279px) 33vw, 25vw"
                 draggable={false}
-                className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                className={`object-cover object-top transition-transform duration-500 ${
+                  disabled ? "brightness-40 saturate-50" : "group-hover:scale-105"
+                }`}
               />
 
+              {/* Dark tint on base artwork when disabled */}
+              {disabled && (
+                <div className="absolute inset-0 bg-slate-950/40 z-5 pointer-events-none" />
+              )}
+
+              {/* Under Construction overlay */}
+              {overlayImage && (
+                <div className="absolute inset-0 z-10 flex items-end justify-center pointer-events-none">
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={overlayImage}
+                      alt="Under Construction"
+                      fill
+                      unoptimized
+                      sizes="(max-width: 767px) 100vw, (max-width: 1279px) 33vw, 25vw"
+                      draggable={false}
+                      priority
+                      className="object-contain object-bottom scale-105 drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Fade artwork into panel */}
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-white to-transparent" />
+              <div
+                className={`absolute inset-x-0 bottom-0 h-20 bg-linear-to-t ${
+                  disabled
+                    ? "from-slate-900/60 to-transparent z-15"
+                    : "from-white to-transparent"
+                }`}
+              />
 
               {/* Info button */}
               <button
                 type="button"
-                onClick={onInfo}
+                onClick={disabled ? undefined : onInfo}
+                disabled={disabled}
                 aria-label={`About ${title}`}
-                className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full border border-slate-200/90 bg-white/85 text-sm font-bold text-slate-700 shadow-sm backdrop-blur transition hover:bg-slate-900 hover:text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+                className={`absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center rounded-full border border-slate-200/90 bg-white/85 text-sm font-bold text-slate-700 shadow-sm backdrop-blur transition ${
+                  disabled
+                    ? "opacity-35 cursor-not-allowed pointer-events-none"
+                    : "hover:bg-slate-900 hover:text-white focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-slate-900 cursor-pointer"
+                }`}
               >
                 ?
               </button>
@@ -94,6 +142,11 @@ export default function ModeCard({
 
             {/* Info panel */}
             <div className="relative -mt-4 flex flex-1 flex-col gap-3 px-4 pb-5 pt-4 sm:px-5">
+              {/* Dimmed overlay for disabled card */}
+              {disabled && (
+                <div className="absolute inset-0 bg-slate-950/45 z-10 pointer-events-none" />
+              )}
+
               {/* Title and badge */}
               <div className="flex min-w-0 items-start gap-3">
                 <div
@@ -150,19 +203,29 @@ export default function ModeCard({
               {/* CTA stays at the bottom */}
               <button
                 type="button"
-                onClick={onSelect}
-                className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-900 transition-all duration-200 hover:brightness-105 active:scale-[0.98] focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-slate-900 sm:text-sm cursor-pointer"
+                onClick={disabled ? undefined : onSelect}
+                disabled={disabled}
+                aria-disabled={disabled}
+                className={`mt-auto flex w-full items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-slate-900 transition-all duration-200 sm:text-sm ${
+                  disabled
+                    ? "opacity-60 cursor-not-allowed pointer-events-none"
+                    : "hover:brightness-105 active:scale-[0.98] focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-slate-900 cursor-pointer"
+                }`}
                 style={{
                   borderColor: accent,
                   background: `linear-gradient(180deg, ${tint(35)}, ${tint(14)})`,
-                  boxShadow: `0 4px 14px ${tint(30)}, inset 0 0 10px ${tint(15)}`,
+                  boxShadow: disabled
+                    ? `0 2px 8px ${tint(15)}`
+                    : `0 4px 14px ${tint(30)}, inset 0 0 10px ${tint(15)}`,
                 }}
               >
                 Select mode
 
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1"
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    disabled ? "" : "group-hover:translate-x-1"
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"

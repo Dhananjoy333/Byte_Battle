@@ -78,6 +78,8 @@ export default function ModeSelec({
   // Main GSAP Transition from Mode Selection to Setup Screen
   const handleSelectMode = useCallback(
     (modeId: ModeId) => {
+      const mode = getModeById(modeId);
+      if (mode?.disabled) return;
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
 
