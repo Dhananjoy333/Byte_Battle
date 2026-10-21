@@ -10,11 +10,19 @@ import { SegmentedProgressRing } from '@/app/_components/char_selec/SegmentedPro
 import { useScreenTier } from '@/app/_components/char_selec/useScreenTier';
 import { CHARACTERS, getCharacterById } from '@/app/_data/characters';
 import { useGameStore } from '@/app/_store/useGameStore';
+import { useShallow } from 'zustand/shallow';
+import { socket } from '@/lib/socket';
 
 export default function CharacterSelectPage(): React.JSX.Element {
     const router = useRouter();
     const screenTier = useScreenTier();
-    const { selectedCharacterId, setSelectedCharacter } = useGameStore();
+    const { selectedCharacterId, setSelectedCharacter, setOpponentCharacter, roomID } = useGameStore(useShallow((state) => ({
+        selectedCharacterId: state.selectedCharacterId,
+        setSelectedCharacter: state.setSelectedCharacter,
+        setOpponentCharacter: state.setOpponentCharacter,
+        roomID: state.roomID
+    })));
+    const [isLockedIn, setIsLockedIn] = useState<boolean>(false);
     const [selectedId, setSelectedId] = useState<string>(CHARACTERS[0].id);
     const [direction, setDirection] = useState<RailDirection>('above');
     const isBusyRef = useRef<boolean>(false);
@@ -29,10 +37,40 @@ export default function CharacterSelectPage(): React.JSX.Element {
         }
     }, [selectedCharacterId]);
 
+    useEffect(() => {
+        console.log(`This is your roomID : ${roomID}`);
+    }, [roomID]);
+
+    // Listen for both players having selected their characters
+    useEffect(() => {
+        const handleBothSelected = (data: {
+            message: string;
+            characters?: Record<string, string>;
+        }) => {
+            console.log("Both characters selected:", data);
+            if (data.characters) {
+                const playerId = typeof window !== 'undefined' ? sessionStorage.getItem('byte-battle-player-id') : null;
+                // Find opponent's character
+                const opponentEntry = Object.entries(data.characters).find(([p]) => p !== playerId);
+                if (opponentEntry && opponentEntry[1]) {
+                    setOpponentCharacter(opponentEntry[1]);
+                }
+            }
+            router.push('/territory_battle');
+        };
+
+        socket.on("char_selected", handleBothSelected);
+
+        return () => {
+            socket.off("char_selected", handleBothSelected);
+        };
+    }, [router, setOpponentCharacter]);
+
     const activeCharacter = getCharacterById(selectedId);
 
     const handleSelectCharacter = (newId: string, dir?: RailDirection) => {
-        if (newId === selectedId || isBusyRef.current) return;
+        if (isLockedIn || isBusyRef.current) return;
+        if (newId === selectedId) return;
         isBusyRef.current = true;
         setDirection(dir ?? 'above');
         setSelectedId(newId);
@@ -44,8 +82,28 @@ export default function CharacterSelectPage(): React.JSX.Element {
     };
 
     const handlePlay = (): void => {
+        setIsLockedIn(true);
         setSelectedCharacter(selectedId);
-        router.push('/territory_battle');
+        if (!roomID) {
+            router.push('/territory_battle');
+            return;
+        }
+        try {
+            const playerId = typeof window !== 'undefined' ? sessionStorage.getItem('byte-battle-player-id') : null;
+            socket.emit("character_select", {
+                roomID,
+                player: playerId,
+                selectedCharacterId: selectedId
+            },
+                (response: {
+                    error?: string,
+                    message?: string
+                }) => {
+                    console.log(`Response after selecting character is :`, response);
+                });
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -53,6 +111,8 @@ export default function CharacterSelectPage(): React.JSX.Element {
             className="relative h-screen w-screen overflow-hidden bg-[#07080e] flex items-center justify-center select-none"
             suppressHydrationWarning
         >
+
+
             {/* ============================================================== */}
             {/* Back to Mode Selection Button                                   */}
             {/* ============================================================== */}
@@ -86,6 +146,7 @@ export default function CharacterSelectPage(): React.JSX.Element {
                 direction={direction}
                 onPlay={handlePlay}
                 isBusyRef={isBusyRef}
+                isLockedIn={isLockedIn}
             />
 
             {/* ============================================================== */}
@@ -182,10 +243,16 @@ export default function CharacterSelectPage(): React.JSX.Element {
                 <button
                     type="button"
                     onClick={handlePlay}
-                    className="group flex items-center justify-center gap-2 px-8 sm:px-12 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl bg-linear-to-r from-[#ff4767] via-[#ff3358] to-[#ff2b4e] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_25px_rgba(255,71,103,0.55)] hover:shadow-[0_12px_32px_rgba(255,71,103,0.7)] transition-all duration-200 cursor-pointer"
+                    disabled={isLockedIn}
+                    className={`group flex items-center justify-center gap-2 px-8 sm:px-12 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase transition-all duration-200 ${isLockedIn
+                            ? 'bg-zinc-700 text-zinc-300 border border-zinc-600/60 shadow-none cursor-not-allowed'
+                            : 'bg-linear-to-r from-[#ff4767] via-[#ff3358] to-[#ff2b4e] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white shadow-[0_8px_25px_rgba(255,71,103,0.55)] hover:shadow-[0_12px_32px_rgba(255,71,103,0.7)] cursor-pointer'
+                        }`}
                 >
-                    <span>Let&apos;s Play!</span>
-                    <FiArrowRight className="size-3.5 sm:size-4 shrink-0 transition-transform group-hover:translate-x-1" />
+                    <span>{isLockedIn ? 'waiting for opponent...' : "Let's Play!"}</span>
+                    {!isLockedIn && (
+                        <FiArrowRight className="size-3.5 sm:size-4 shrink-0 transition-transform group-hover:translate-x-1" />
+                    )}
                 </button>
             </div>
         </main>

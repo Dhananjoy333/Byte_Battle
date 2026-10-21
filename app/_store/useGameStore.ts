@@ -8,6 +8,8 @@ export interface GameState {
     setSelectedCharacter: (id: string) => void;
     setOpponentCharacter: (id: string) => void;
     swapOpponentIfSame: () => void;
+    roomID : string;
+    setRoomIDStore:(id:string)=>void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -15,6 +17,13 @@ export const useGameStore = create<GameState>()(
         (set, get) => ({
             selectedCharacterId: 'aurelia',
             opponentCharacterId: 'kira',
+            roomID:"",
+
+            setRoomIDStore: (id : string)=>{
+                set({
+                    roomID : id
+                })
+            },
 
             setSelectedCharacter: (id: string) => {
                 const currentOpponent = get().opponentCharacterId;
