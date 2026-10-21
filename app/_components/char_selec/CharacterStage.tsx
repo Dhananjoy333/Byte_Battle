@@ -20,6 +20,7 @@ interface CharacterStageProps {
     direction?: StageDirection;
     onPlay?: () => void;
     isBusyRef?: React.MutableRefObject<boolean>;
+    isLockedIn?: boolean;
 }
 
 interface TransitionData {
@@ -33,6 +34,7 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
     direction = 'above',
     onPlay,
     isBusyRef,
+    isLockedIn = false,
 }) => {
     // Current displayed character in center
     const [displayedId, setDisplayedId] = useState<string>(characterId);
@@ -322,10 +324,17 @@ export const CharacterStage: React.FC<CharacterStageProps> = ({
                 <button
                     type="button"
                     onClick={onPlay}
-                    className="group flex items-center justify-center gap-2.5 px-10 xl:px-14 py-3 xl:py-3.5 rounded-2xl bg-linear-to-r from-[#ff4767] via-[#ff3358] to-[#ff2b4e] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white font-black text-sm xl:text-base tracking-wider uppercase shadow-[0_10px_28px_rgba(255,71,103,0.55)] hover:shadow-[0_14px_35px_rgba(255,71,103,0.75)] transition-all duration-200 cursor-pointer"
+                    disabled={isLockedIn}
+                    className={`group flex items-center justify-center gap-2.5 px-10 xl:px-14 py-3 xl:py-3.5 rounded-2xl font-black text-sm xl:text-base tracking-wider uppercase transition-all duration-200 ${
+                        isLockedIn
+                            ? 'bg-zinc-700 text-zinc-300 border border-zinc-600/60 shadow-none cursor-not-allowed'
+                            : 'bg-linear-to-r from-[#ff4767] via-[#ff3358] to-[#ff2b4e] hover:from-[#e63a58] hover:to-[#e62b4e] active:scale-95 text-white shadow-[0_10px_28px_rgba(255,71,103,0.55)] hover:shadow-[0_14px_35px_rgba(255,71,103,0.75)] cursor-pointer'
+                    }`}
                 >
-                    <span>Let&apos;s Play!</span>
-                    <FiArrowRight className="size-4 xl:size-4.5 shrink-0 transition-transform group-hover:translate-x-1" />
+                    <span>{isLockedIn ? 'waiting for opponent...' : "Let's Play!"}</span>
+                    {!isLockedIn && (
+                        <FiArrowRight className="size-4 xl:size-4.5 shrink-0 transition-transform group-hover:translate-x-1" />
+                    )}
                 </button>
             </div>
         </div>

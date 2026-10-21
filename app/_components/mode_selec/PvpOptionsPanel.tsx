@@ -3,6 +3,7 @@
 import React, { useState, forwardRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { connectSocket, socket } from "@/lib/socket";
+import { useGameStore } from "@/app/_store/useGameStore";
 
 interface PvpOptionsPanelProps {
   onFindMatch?: () => void;
@@ -69,6 +70,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
     const [isConnecting, setIsConnecting] = useState<boolean>(false);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [copied, setCopied] = useState<boolean>(false);
+    const setRoomIDStore = useGameStore((state)=> state.setRoomIDStore)
     const [player, setPlayer] = useState<string | null>(() => {
       // 1. Prevent this from running on the server during SSR
       if (typeof window === "undefined") return null;
@@ -93,6 +95,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
         console.log(`you are connected to room ${response.roomId}`, response);
         if (response.roomId) {
           setRoomId(response.roomId);
+          setRoomIDStore(response.roomId)
         }
         setIsConnected(true);
         setIsConnecting(false);
@@ -103,7 +106,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
       return () => {
         socket.off("room_update", handleRoomUpdate);
       };
-    }, []);
+    }, [setRoomIDStore]);
 
     const handleGenerateRoom = async function () {
       try {
