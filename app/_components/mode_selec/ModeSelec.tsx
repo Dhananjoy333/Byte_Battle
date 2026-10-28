@@ -12,6 +12,7 @@ import {
   DifficultyId,
   getModeById,
 } from "./modeData";
+import { useGameStore } from "@/app/_store/useGameStore";
 
 const IMAGEKIT_URL = process.env.NEXT_PUBLIC_IMAGEKIT_URL;
 export type { ModeId, OpponentId, DifficultyId };
@@ -408,6 +409,9 @@ export default function ModeSelec({
 
   // Continue button handler
   const handleContinue = () => {
+    if (selectedOpponent === "pve") {
+      useGameStore.getState().resetPvP();
+    }
     if (onContinue) {
       onContinue({
         mode: selectedMode,

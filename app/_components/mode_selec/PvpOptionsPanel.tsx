@@ -70,8 +70,10 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
     const [isConnecting, setIsConnecting] = useState<boolean>(false);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [copied, setCopied] = useState<boolean>(false);
-    const setRoomIDStore = useGameStore((state)=> state.setRoomIDStore)
-    const [player, setPlayer] = useState<string | null>(() => {
+    const setRoomIDStore = useGameStore((state) => state.setRoomIDStore);
+    const setRoomOwnerId = useGameStore((state) => state.setRoomOwnerId);
+    const setGameMode = useGameStore((state) => state.setGameMode);
+    const [player] = useState<string | null>(() => {
       // 1. Prevent this from running on the server during SSR
       if (typeof window === "undefined") return null;
 
@@ -91,12 +93,18 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
         roomId: string;
         playerCount?: number;
         status?: string;
+        owner?: string;
+        players?: string[];
       }) => {
         console.log(`you are connected to room ${response.roomId}`, response);
         if (response.roomId) {
           setRoomId(response.roomId);
-          setRoomIDStore(response.roomId)
+          setRoomIDStore(response.roomId);
         }
+        if (response.owner) {
+          setRoomOwnerId(response.owner);
+        }
+        setGameMode('pvp');
         setIsConnected(true);
         setIsConnecting(false);
       };
@@ -106,7 +114,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
       return () => {
         socket.off("room_update", handleRoomUpdate);
       };
-    }, [setRoomIDStore]);
+    }, [setRoomIDStore, setRoomOwnerId, setGameMode]);
 
     const handleGenerateRoom = async function () {
       try {
@@ -117,7 +125,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
           { player },
           (response: {
             ok: boolean;
-            room?: { id: string };
+            room?: { id: string; owner?: string };
             error?: string;
           }) => {
             if (!response.ok || !response.room) {
@@ -126,8 +134,12 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
             }
 
             const roomId = response.room.id;
+            const owner = response.room.owner || player;
 
             setRoomId(roomId);
+            setRoomIDStore(roomId);
+            setRoomOwnerId(owner);
+            setGameMode('pvp');
 
             console.log("Room created:", roomId);
           }
@@ -173,7 +185,7 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
           },
           (response: {
             ok: boolean;
-            room?: { id: string };
+            room?: { id: string; owner?: string };
             error?: string;
           }) => {
             if (!response.ok || !response.room) {
@@ -187,6 +199,11 @@ export const PvpOptionsPanel = forwardRef<HTMLDivElement, PvpOptionsPanelProps>(
             const roomID = response.room.id;
             console.log("Room joined", roomID);
             setRoomId(roomID);
+            setRoomIDStore(roomID);
+            if (response.room.owner) {
+              setRoomOwnerId(response.room.owner);
+            }
+            setGameMode('pvp');
           }
         );
       } catch (error) {
