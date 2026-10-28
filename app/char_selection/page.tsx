@@ -16,11 +16,22 @@ import { socket } from '@/lib/socket';
 export default function CharacterSelectPage(): React.JSX.Element {
     const router = useRouter();
     const screenTier = useScreenTier();
-    const { selectedCharacterId, setSelectedCharacter, setOpponentCharacter, roomID } = useGameStore(useShallow((state) => ({
+    const {
+        selectedCharacterId,
+        setSelectedCharacter,
+        setOpponentCharacter,
+        roomID,
+        roomOwnerId,
+        setPlayersFromMatch,
+        setGameMode,
+    } = useGameStore(useShallow((state) => ({
         selectedCharacterId: state.selectedCharacterId,
         setSelectedCharacter: state.setSelectedCharacter,
         setOpponentCharacter: state.setOpponentCharacter,
-        roomID: state.roomID
+        roomID: state.roomID,
+        roomOwnerId: state.roomOwnerId,
+        setPlayersFromMatch: state.setPlayersFromMatch,
+        setGameMode: state.setGameMode,
     })));
     const [isLockedIn, setIsLockedIn] = useState<boolean>(false);
     const [selectedId, setSelectedId] = useState<string>(CHARACTERS[0].id);
@@ -46,15 +57,21 @@ export default function CharacterSelectPage(): React.JSX.Element {
         const handleBothSelected = (data: {
             message: string;
             characters?: Record<string, string>;
+            owner?: string;
+            players?: string[];
         }) => {
             console.log("Both characters selected:", data);
             if (data.characters) {
                 const playerId = typeof window !== 'undefined' ? sessionStorage.getItem('byte-battle-player-id') : null;
-                // Find opponent's character
-                const opponentEntry = Object.entries(data.characters).find(([p]) => p !== playerId);
-                if (opponentEntry && opponentEntry[1]) {
-                    setOpponentCharacter(opponentEntry[1]);
-                }
+                // Owner is player1; guest is player2
+                const ownerId = data.owner || roomOwnerId || playerId || Object.keys(data.characters)[0];
+
+                setPlayersFromMatch({
+                    characters: data.characters,
+                    ownerId,
+                    players: data.players,
+                    myPlayerId: playerId,
+                });
             }
             router.push('/territory_battle');
         };
@@ -64,7 +81,7 @@ export default function CharacterSelectPage(): React.JSX.Element {
         return () => {
             socket.off("char_selected", handleBothSelected);
         };
-    }, [router, setOpponentCharacter]);
+    }, [router, roomOwnerId, setPlayersFromMatch]);
 
     const activeCharacter = getCharacterById(selectedId);
 
@@ -85,6 +102,7 @@ export default function CharacterSelectPage(): React.JSX.Element {
         setIsLockedIn(true);
         setSelectedCharacter(selectedId);
         if (!roomID) {
+            setGameMode('pve');
             router.push('/territory_battle');
             return;
         }

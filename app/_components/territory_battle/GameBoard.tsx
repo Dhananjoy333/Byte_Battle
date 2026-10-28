@@ -46,6 +46,7 @@ export const GameBoard: React.FC = () => {
 
   // 2. Banked bits (safe Bits that can be spent on territory actions)
   const [bankedBits, setBankedBits] = useState<number>(5);
+  const [opponentBits, setOpponentBits] = useState<number>(5);
 
   // 3. Track selected cell for capture/challenge popover
   const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
@@ -61,14 +62,47 @@ export const GameBoard: React.FC = () => {
 
   const isGameFinished = matchState.status === 'finished';
 
-  // Local user is currently player1
-  const localPlayer: CellOwner = 'player1';
+  // Mode and player character integration from game store
+  const { gameMode, selectedCharacterId, opponentCharacterId, player1, player2 } = useGameStore();
+  const isPvp = gameMode === 'pvp' && Boolean(player1 && player2);
 
-  // Character selection integration from store (with graceful fallback to Raze)
-  const { selectedCharacterId } = useGameStore();
-  const activeChar = getCharacterById(selectedCharacterId);
-  const playerCharImg = `${IMAGEKIT_URL}/char_selec_img/${activeChar.id}.png`;
-  const playerCharName = activeChar?.hudName;
+  // Identify local user
+  const myPlayerId = typeof window !== 'undefined' ? sessionStorage.getItem('byte-battle-player-id') : null;
+  const isPlayer2Local = isPvp && Boolean(myPlayerId && player2?.id === myPlayerId);
+  const localPlayer: CellOwner = isPlayer2Local ? 'player2' : 'player1';
+
+  // Player 1 (Room Owner in PvP, or User in PvE)
+  const p1CharacterId = isPvp ? (player1?.characterId || selectedCharacterId) : selectedCharacterId;
+  const p1Char = getCharacterById(p1CharacterId);
+  const p1CharImg = `${IMAGEKIT_URL}/char_selec_img/${p1Char.id}.png`;
+  const p1CharName = p1Char?.hudName;
+
+  // Player 2 (Second user in PvP, or Opponent/Boss in PvE)
+  const p2CharacterId = isPvp ? (player2?.characterId || opponentCharacterId) : opponentCharacterId;
+  const p2Char = getCharacterById(p2CharacterId);
+  const p2CharImg = `${IMAGEKIT_URL}/char_selec_img/${p2Char.id}.png`;
+  const p2CharName = p2Char?.hudName;
+
+  // Local active player aliases for compatibility
+  const leftPlayerCharImg = localPlayer === 'player1' ? p1CharImg : p2CharImg;
+  const leftPlayerCharName = localPlayer === 'player1' ? p1CharName : p2CharName;
+  const rightPlayerCharImg = localPlayer === 'player1' ? p2CharImg : p1CharImg;
+  const rightPlayerCharName = localPlayer === 'player1' ? p2CharName : p1CharName;
+
+  useEffect(() => {
+    console.log(`local player is : ${localPlayer}`);
+    console.log(`is player 2 local : ${isPlayer2Local}`);
+    console.log(`myPlayerId : ${myPlayerId}`);
+    console.log(`player1 : ${player1}`);
+    console.log(`player2 : ${player2}`);
+    console.log(`gameMode : ${gameMode}`);
+    console.log(`selectedCharacterId : ${selectedCharacterId}`);
+    console.log(`opponentCharacterId : ${opponentCharacterId}`);
+    console.log(`charImg p1 ${player1?.characterId}`);
+    console.log(`charImg p2 ${player2?.characterId}`);
+    console.log(`p1char : ${p1Char}`)
+    console.log(`p2char : ${p2Char}`)
+  }, [])
 
   // 7. Cell Duel & Conflict Management Hook
   const {
@@ -208,15 +242,16 @@ export const GameBoard: React.FC = () => {
     [board]
   );
 
-  // 11. Autonomous Player 2 AI territory expansion
+  // 11. Autonomous Player 2 AI territory expansion (only in PvE)
   useAITerritoryExpansion({
     board,
     setBoard,
-    isEnabled: matchState.status === 'playing',
-    isPaused: isConflictActive || isGameFinished,
+    isEnabled: matchState.status === 'playing' && !isPvp,
+    isPaused: isConflictActive || isGameFinished || isPvp,
     intervalMs: AI_CAPTURE_INTERVAL,
     onAICaptured: (capturedCell) => {
       if (isGameFinished) return;
+      setOpponentBits((prev) => Math.max(0, prev - CELL_CAPTURE_COST));
       setSelectedCellId((currentSelected) =>
         currentSelected === capturedCell.id ? null : currentSelected
       );
@@ -227,34 +262,52 @@ export const GameBoard: React.FC = () => {
     },
     onAIInitiateChallenge: (targetP1Cell) => {
       if (isGameFinished) return;
+      setOpponentBits((prev) => Math.max(0, prev - PLAYER_CHALLENGE_COST));
       setSelectedCellId(null);
       triggerAIChallenge(targetP1Cell);
     },
   });
 
-  // 12. Interactable empty cell IDs for Player 1
+  // ponytail: AI passive bit accumulation simulates background question-answering in PvE.
+  // Upgrade path: connect to live AI question solver if simulated accuracy/delays are desired.
+  useEffect(() => {
+    if (matchState.status !== 'playing' || isConflictActive || isGameFinished || isPvp) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setOpponentBits((prev) => prev + (Math.random() < 0.5 ? 1 : 2));
+    }, 6000);
+
+    return () => clearInterval(timer);
+  }, [matchState.status, isConflictActive, isGameFinished, isPvp]);
+
+  const localConnectedCells = localPlayer === 'player2' ? connectedP2CellIds : connectedP1CellIds;
+  const enemyOwner: CellOwner = localPlayer === 'player1' ? 'player2' : 'player1';
+
+  // 12. Interactable empty cell IDs for local player
   const interactableCellIds = useMemo(() => {
     if (isConflictActive || isGameFinished) return new Set<string>();
     const set = new Set<string>();
     for (const cell of board) {
-      if (canCaptureCell(board, cell, localPlayer, connectedP1CellIds, BOARD_SIZE)) {
+      if (canCaptureCell(board, cell, localPlayer, localConnectedCells, BOARD_SIZE)) {
         set.add(cell.id);
       }
     }
     return set;
-  }, [board, localPlayer, isConflictActive, isGameFinished, connectedP1CellIds]);
+  }, [board, localPlayer, isConflictActive, isGameFinished, localConnectedCells]);
 
-  // 13. Challengeable enemy cell IDs for Player 1
+  // 13. Challengeable enemy cell IDs for local player
   const challengeableEnemyCellIds = useMemo(() => {
     if (isConflictActive || isGameFinished) return new Set<string>();
     const enemyCells = getChallengeableEnemyCells(
       board,
       localPlayer,
-      connectedP1CellIds,
+      localConnectedCells,
       BOARD_SIZE
     );
     return new Set<string>(enemyCells.map((c) => c.id));
-  }, [board, localPlayer, isConflictActive, isGameFinished, connectedP1CellIds]);
+  }, [board, localPlayer, isConflictActive, isGameFinished, localConnectedCells]);
 
   // Territories count
   const { p1Cells: player1Count, p2Cells: player2Count } = useMemo(
@@ -262,7 +315,7 @@ export const GameBoard: React.FC = () => {
     [board]
   );
 
-  // Cell click handler for Player 1
+  // Cell click handler for local player
   const handleCellClick = useCallback(
     (cell: CellType) => {
       if (isConflictActive || isGameFinished) {
@@ -270,18 +323,18 @@ export const GameBoard: React.FC = () => {
       }
 
       if (cell.owner === null) {
-        if (!canCaptureCell(board, cell, localPlayer, connectedP1CellIds, BOARD_SIZE)) return;
+        if (!canCaptureCell(board, cell, localPlayer, localConnectedCells, BOARD_SIZE)) return;
         setSelectedCellId((prev) => (prev === cell.id ? null : cell.id));
         return;
       }
 
-      if (cell.owner === 'player2') {
-        if (!canChallengeCell(board, cell, localPlayer, connectedP1CellIds, BOARD_SIZE)) return;
+      if (cell.owner === enemyOwner) {
+        if (!canChallengeCell(board, cell, localPlayer, localConnectedCells, BOARD_SIZE)) return;
         setSelectedCellId((prev) => (prev === cell.id ? null : cell.id));
         return;
       }
     },
-    [board, localPlayer, isConflictActive, isGameFinished, connectedP1CellIds]
+    [board, localPlayer, isConflictActive, isGameFinished, localConnectedCells, enemyOwner]
   );
 
   // Empty cell capture action
@@ -333,6 +386,7 @@ export const GameBoard: React.FC = () => {
     const initial = createInitialBoard(BOARD_SIZE);
     setBoard(initial);
     setBankedBits(5);
+    setOpponentBits(5);
     setSelectedCellId(null);
     setIsQuestionModalOpen(false);
     setLastAICapturedId(null);
@@ -380,8 +434,8 @@ export const GameBoard: React.FC = () => {
             >
               <div className="absolute inset-0 rounded-full bg-amber-400/25 blur-2xl pointer-events-none scale-125" />
               <Image
-                src={playerCharImg}
-                alt={playerCharName}
+                src={leftPlayerCharImg}
+                alt={leftPlayerCharName}
                 fill
                 className="w-full h-full object-contain object-bottom drop-shadow-[0_0_20px_rgba(250,204,21,0.7)] pointer-events-none scale-110 origin-bottom"
               />
@@ -390,7 +444,7 @@ export const GameBoard: React.FC = () => {
             {/* Stylized Graffiti Text */}
             <div className="mb-2 sm:mb-3 md:mb-15 select-none">
               <span className="font-black italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-6xl text-yellow-300 tracking-tighter drop-shadow-[0_3px_6px_rgba(0,0,0,0.9),0_0_15px_rgba(250,204,21,0.8)] -rotate-6 block font-sans">
-                {playerCharName}
+                {leftPlayerCharName}
               </span>
             </div>
           </div>
@@ -407,14 +461,16 @@ export const GameBoard: React.FC = () => {
             {/* Top Tab Overlay */}
             <div className="absolute top-[12%] left-[16%] right-[16%] flex items-center justify-center pointer-events-none">
               <span className="font-black text-[10px] sm:text-xs md:text-sm lg:text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                PLAYER (YOU)
+                {isPvp
+                  ? (localPlayer === 'player1' ? 'PLAYER 1 (YOU)' : 'PLAYER 1')
+                  : 'PLAYER (YOU)'}
               </span>
             </div>
 
             {/* Dynamic Cells Count */}
             <div className="absolute top-[34%] left-[47%] right-[6%] flex items-center pointer-events-none">
               <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
-                 Cells : {player1Count}
+                Cells : {player1Count}
               </span>
               {player1Count !== connectedP1CellIds.size && (
                 <span className="ml-1 text-[9px] sm:text-[10px] md:text-xs font-mono font-bold text-emerald-600">
@@ -441,11 +497,10 @@ export const GameBoard: React.FC = () => {
               aria-label="Answer Question"
               disabled={isConflictActive || isGameFinished}
               onClick={() => setIsQuestionModalOpen(true)}
-              className={`group relative aspect-2114/744 w-full max-w-67.5 sm:max-w-[320px] md:max-w-90 xl:max-w-100 2xl:max-w-115 flex items-center justify-center transition-all duration-150 ease-out select-none ${
-                isConflictActive || isGameFinished
-                  ? 'opacity-50 grayscale cursor-not-allowed pointer-events-none'
-                  : 'cursor-pointer hover:scale-[1.03] hover:brightness-105 active:scale-[0.98] active:brightness-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.5)] hover:drop-shadow-[0_8px_22px_rgba(250,204,21,0.4)]'
-              }`}
+              className={`group relative aspect-2114/744 w-full max-w-67.5 sm:max-w-[320px] md:max-w-90 xl:max-w-100 2xl:max-w-115 flex items-center justify-center transition-all duration-150 ease-out select-none ${isConflictActive || isGameFinished
+                ? 'opacity-50 grayscale cursor-not-allowed pointer-events-none'
+                : 'cursor-pointer hover:scale-[1.03] hover:brightness-105 active:scale-[0.98] active:brightness-95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.5)] hover:drop-shadow-[0_8px_22px_rgba(250,204,21,0.4)]'
+                }`}
             >
               {/* Ornate Fantasy Game UI Button Frame Asset */}
               <Image
@@ -485,7 +540,7 @@ export const GameBoard: React.FC = () => {
 
           {/* Match Timer HUD using timer_layout.png (Nestled directly above the Board) */}
           <div
-            className="relative aspect-3974/1056 select-none shrink-0 drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)] flex items-center justify-center -mb-2 sm:-mb-3 md:-mb-4 z-20 lg:w-60 2xl:w-110"  
+            className="relative aspect-3974/1056 select-none shrink-0 drop-shadow-[0_8px_20px_rgba(0,0,0,0.7)] flex items-center justify-center -mb-2 sm:-mb-3 md:-mb-4 z-20 lg:w-60 2xl:w-110"
           >
             <Image
               src={`${IMAGEKIT_URL}/territory_img/timer_layout.png`}
@@ -504,13 +559,12 @@ export const GameBoard: React.FC = () => {
             {/* Digital Timer Value */}
             <div className="absolute top-[30%] bottom-[12%] inset-x-[20%] flex items-center justify-center pointer-events-none">
               <span
-                className={`text-xl 2xl:text-5xl font-mono font-black tracking-widest ${
-                  isCriticalTime
-                    ? 'text-rose-400 animate-pulse drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]'
-                    : isLowTime
+                className={`text-xl 2xl:text-5xl font-mono font-black tracking-widest ${isCriticalTime
+                  ? 'text-rose-400 animate-pulse drop-shadow-[0_0_10px_rgba(244,63,94,0.9)]'
+                  : isLowTime
                     ? 'text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.9)]'
                     : 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.8)]'
-                }`}
+                  }`}
               >
                 {formatMatchTime(remainingSeconds)}
               </span>
@@ -520,7 +574,7 @@ export const GameBoard: React.FC = () => {
           {/* Center 7x7 Territory Grid inside Frame Bezel */}
           <div
             className="relative lg:w-143 lg:h-143 2xl:w-200 2xl:h-200 aspect-square flex items-center justify-center select-none"
-            
+
           >
             {/* Frame Image Overlay from /territory_img/grid_layout.png */}
             <Image
@@ -578,8 +632,8 @@ export const GameBoard: React.FC = () => {
                       cell.owner === 'player1'
                         ? connectedP1CellIds.has(cell.id)
                         : cell.owner === 'player2'
-                        ? connectedP2CellIds.has(cell.id)
-                        : true;
+                          ? connectedP2CellIds.has(cell.id)
+                          : true;
 
                     const isBase =
                       (cell.row === P1_BASE.row && cell.col === P1_BASE.col) ||
@@ -612,7 +666,7 @@ export const GameBoard: React.FC = () => {
                               />
                             )}
 
-                            {selectedCell.owner === 'player2' && (
+                            {selectedCell.owner === enemyOwner && (
                               <ChallengePopover
                                 row={selectedCell.row}
                                 col={selectedCell.col}
@@ -634,23 +688,23 @@ export const GameBoard: React.FC = () => {
         </div>
 
         {/* ============================================================ */}
-        {/* RIGHT COLUMN: Enemy (AI)                                     */}
-        {/* Boss Avatar + Point Card                                     */}
+        {/* RIGHT COLUMN: Enemy (AI in PvE / Player 2 in PvP)             */}
+        {/* Boss / Character Avatar + Point Card                         */}
         {/* ============================================================ */}
         <div
           className="flex flex-col 2xl:translate-y-20 2xl:-translate-x-20 items-center xl:items-start shrink-0"
           style={{ width: 'clamp(270px, 23vw, 460px)' }}
         >
-          {/* Boss Bust & Graffiti Tag */}
+          {/* Bust & Graffiti Tag */}
           <div className="flex items-end gap-1.5 sm:gap-2 relative -mb-4 sm:-mb-6 md:-mb-8 xl:-mb-10 z-10 w-full justify-center xl:justify-start">
             {/* Stylized Graffiti Text */}
             <div className="mb-2 sm:mb-3 md:mb-4 select-none">
               <span className="font-black italic text-2xl sm:text-3xl md:text-4xl lg:text-5xl 2xl:text-6xl text-rose-500 tracking-tighter drop-shadow-[0_3px_6px_rgba(0,0,0,0.9),0_0_15px_rgba(244,63,94,0.8)] rotate-6 block font-sans">
-                BOSS
+                {isPvp ? rightPlayerCharName : 'BOSS'}
               </span>
             </div>
 
-            {/* Boss Bust Image */}
+            {/* Bust Image */}
             <div
               className="relative shrink-0 overflow-visible"
               style={{
@@ -660,8 +714,8 @@ export const GameBoard: React.FC = () => {
             >
               <div className="absolute inset-0 rounded-full bg-rose-500/25 blur-2xl pointer-events-none scale-125" />
               <Image
-                src={`${IMAGEKIT_URL}/territory_img/boss.png`}
-                alt="Boss"
+                src={isPvp ? rightPlayerCharImg : `${IMAGEKIT_URL}/territory_img/boss.png`}
+                alt={isPvp ? (rightPlayerCharName || 'Player 2') : 'Boss'}
                 fill
                 className="w-full h-full object-contain object-bottom drop-shadow-[0_0_20px_rgba(244,63,94,0.7)] pointer-events-none scale-110 origin-bottom"
               />
@@ -680,14 +734,16 @@ export const GameBoard: React.FC = () => {
             {/* Top Tab Overlay */}
             <div className="absolute top-[6%] left-[16%] right-[16%] flex items-center justify-center pointer-events-none">
               <span className="font-black text-[10px] sm:text-xs md:text-sm lg:text-base text-white uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                ENEMY (AI)
+                {isPvp
+                  ? (localPlayer === 'player2' ? 'PLAYER 2 (YOU)' : 'PLAYER 2')
+                  : 'ENEMY (AI)'}
               </span>
             </div>
 
             {/* Dynamic Cells Count */}
             <div className="absolute top-[34%] left-[28%] right-[25%] flex items-center pointer-events-none">
               <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
-                {player2Count} Cells
+                Cells : {player2Count}
               </span>
               {player2Count !== connectedP2CellIds.size && (
                 <span className="ml-1 text-[9px] sm:text-[10px] md:text-xs font-mono font-bold text-rose-600">
@@ -699,7 +755,7 @@ export const GameBoard: React.FC = () => {
             {/* Dynamic Bits Count */}
             <div className="absolute top-[60%] left-[28%] right-[25%] flex items-center pointer-events-none">
               <span className="font-black text-xs sm:text-sm md:text-base lg:text-lg 2xl:text-xl text-zinc-900 tracking-wide font-sans">
-                Bits: 0
+                Bits: {opponentBits}
               </span>
             </div>
           </div>
@@ -721,8 +777,8 @@ export const GameBoard: React.FC = () => {
         onAcceptAIChallenge={acceptAIChallenge}
         onRejectAIChallenge={rejectAIChallenge}
         onDismissFeedback={finishConflict}
-        playerCharImg={playerCharImg}
-        enemyCharImg={`${IMAGEKIT_URL}/territory_img/boss.png`}
+        playerCharImg={leftPlayerCharImg}
+        enemyCharImg={isPvp ? rightPlayerCharImg : `${IMAGEKIT_URL}/territory_img/boss.png`}
         opponentNumber={2}
       />
 
